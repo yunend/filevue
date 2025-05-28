@@ -9,7 +9,7 @@ on:
     
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/filevue  # 明确指定组织/用户和仓库名
   TAG: latest
 
 jobs:
