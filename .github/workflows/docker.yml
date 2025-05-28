@@ -9,7 +9,7 @@ on:
     
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}/filevue
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
   TAG: latest
 
 jobs:
