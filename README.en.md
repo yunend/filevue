@@ -1,34 +1,35 @@
 <div style="text-align: center; margin-bottom: 20px;">
-    <a href="./readme.md"><button onclick="toggleLanguage('cn')">中文</button></a>
-    <button>English</button>
+    <button onclick="toggleLanguage('cn')">中文</button>
+    <a href="./readme.en.md"><button>English</button></a>
+    <a href="./doc/dev.md"><button>Developer Docs</button></a>
 </div>
 
-# GeoGebra Presentation Solution for In-Class Teaching
+# GeoGebra Classroom Presentation Solution
 
 ## Project Background
 
-As a mathematics teacher, I often need to demonstrate dynamic plane and solid geometry figures in class and integrate various teaching resources. The traditional method requires carrying a USB drive and manually running GeoGebra software, which is cumbersome. To simplify the process, I developed the FileVue project, utilizing GeoGebra's web display functionality and supporting local file resource presentation, allowing teachers to directly access required resources through a web page, significantly improving teaching efficiency.
+As a mathematics teacher, I frequently need to demonstrate dynamic plane and solid geometry figures in class while integrating various teaching resources. The traditional approach requires carrying a USB drive and manually running GeoGebra software, which is quite cumbersome. To simplify this process, I developed the FileVue project, leveraging GeoGebra's web display functionality to support local file resource presentation, enabling teachers to directly access required resources through a web browser, significantly improving teaching efficiency.
 
 ## Features
 ### Core Features
-- Server sends file directory to client
-- Client (browser) implements file directory display through recursion
+- Server sends file directories to client
+- Client (browser) implements recursive file directory display
 - Supports custom web display methods for various file types
 
 ### Technology Comparison
-| Feature        | Caching & Compression | File Upload | Lightweight |
-|:--------------:|:---------------------:|:-----------:|:-----------:|
-| Everything     | No                   | No         | Yes         |
-| Nginx          | Yes                  | No         | Yes         |
-| MinIO          | Yes                  | Yes        | No          |
-| This Project   | Yes                  | Yes        | Yes         |
+| Feature      | Cache & Compression | File Upload | Lightweight |
+|:-----------:|:------------------:|:-----------:|:-----------:|
+| Everything  | No                 | No          | Yes         |
+| Nginx       | Yes                | No          | Yes         |
+| MinIO       | Yes                | Yes         | No          |
+| This Project| Yes                | Yes         | Yes         |
 
-### Project Advantages
-1. 🧩 **Frontend-Backend Separation**: Backend can flexibly switch programming languages and frameworks, recursively sending file directories; frontend is handled by `fileVue.js`, requiring no additional dependencies
-2. 📦 **Packaging**: `fileVue.js` is packaged as a library, ensuring an independent runtime environment
-3. 🎨 **Non-invasive Design**: Frontend supports custom processing for files with any extension, including `.ggb`
-4. ⚡ **Performance Optimization**: Backend supports caching and file compression, significantly improving access speed, with fast response for `.ggb` files
-5. 🛠️ **Flexible Configuration**: Supports frontend and backend configuration to meet personalized needs
+### Advantages
+1. 🧩 **Frontend-Backend Separation**: Backend can flexibly use various programming languages and frameworks to recursively send file directories; Frontend handled by `fileVue.js`, no additional dependencies required
+2. 📦 **Packaged Library**: `fileVue.js` uses library packaging to ensure independent runtime environment
+3. 🎨 **Non-intrusive Design**: Frontend supports custom handling for any file extensions including `.ggb`
+4. ⚡ **Performance Optimization**: Backend supports caching and file compression, significantly improving access speed with fast `.ggb` file response
+5. 🛠️ **Flexible Configuration**: Supports both frontend and backend configuration to meet personalized needs
 
 ## Quick Start
 ### Core Files
@@ -36,8 +37,9 @@ As a mathematics teacher, I often need to demonstrate dynamic plane and solid ge
 - `public` folder: Frontend resource files
 - `config.js`: Configuration file
 
-### Open Source Address
-The project is open source, welcome to contribute: 1. [Gitee](https://gitee.com/wangwangqin523/file-vue.git)
+### Open Source Repositories
+Project is open source, contributions welcome:
+1. [Gitee](https://gitee.com/wangwangqin523/file-vue.git)
 2. [Github](https://github.com/yunend/filevue.git)
 
 ### Demo
@@ -57,65 +59,37 @@ The project is open source, welcome to contribute: 1. [Gitee](https://gitee.com/
     <figcaption>Figure 3: filevue.js Sequence Diagram</figcaption>
 </figure>
 
-### Installation Steps
-1. On Windows system，download the zip file: [fileVue-win-x64.zip](https://gitee.com/wangwangqin523/file-vue/raw/master/fileVue-win-x64.zip)
-2. Place `FileVue.exe`, `config.js`, and the `public` folder in the same directory
-3. Double-click to run `FileVue.exe`
-4. Open your browser and visit `http://localhost:8888`
+### Installation
+1. Native Windows Installation:
+   - Download zip package: [fileVue-win-x64.zip](https://gitee.com/wangwangqin523/file-vue/raw/master/fileVue-win-x64.zip)
+   - Place `FileVue.exe`, `config.js` and `public` folder in the same directory
+   - Double-click to run `FileVue.exe`
+   - Open browser and visit `http://localhost:8888`
 
-**From now on, simply save local files to the `public` folder to access them directly via browser through LAN or internet**
+2. Docker Installation:
+```bash
+# Pull latest image
+docker pull ghcr.io/yunend/filevue:latest
 
-### Configuration Instructions
-#### Server Configuration
-Modify the `config.js` file to support custom parameters. For example: you can rename the `public` folder or move it to another directory, and modify the `staticFolder` parameter accordingly. If not modified, default configuration will be used.
-```javascript
-module.exports = {
-    port: 8888,         // Server listening port
-    enableUpload: true, // Whether to enable file upload function
-    staticFolder: 'D:/public2' // Static resource folder path, must use forward slashes, not backslashes
-};
+# Run container (Windows/Linux compatible)
+docker run --name fv --net=host \
+  -v /path/to/your/public:/app/public \
+  --entrypoint /bin/sh \
+  ghcr.io/yunend/filevue:latest \
+  -c "cp -r /app/public-bak/* /app/public/ && exec node server.js"
+ ```bash
+  Parameters:
+--net=host: Use host network mode
+-v /path/to/your/public:/app/public: Mount local directory as static resource directory
+Default port: 8888 (can be customized via config.js)
 ```
-#### Client Configuration
-Include fileVue.js, fileVue.css, and fileListContainer in the HTML file
-```html
-<head>
-    <link rel="stylesheet" href="/css/fileVue.css">
-</head>
-<body>
-    <div id="fileListContainer"></div>
-    <script src="/js/fileVue.js"></script>
-</body>
-```
-If not configured, default configuration will be used; if configuration is needed, add the following code
-```html
-<script >
-window.addEventListener("DOMContentLoaded", function () {
-    fileVue.setConfig({
-        showHeader: true,    // Whether to show file list header
-        showDate: true,      // Whether to show file date
-        showDownload: true,  // Whether to show download link
-        initialPath: '/'     // Initial loading directory
-    });
 
-    // Custom file type processing
-    
-    fileVue.handleFileClick = function (item) {
-//item structure: {name: 'css', type: 'directory', path: '/css', mtime: '2025-03-31T07:03:34.995Z'}, {name: 'upload.html', type: 'file', path: '/upload.html', mtime: '2025-02-24T11:12:22.265Z'}
-
-        const extension = item.name.split('.').pop().toLowerCase();
-        switch (extension) {
-            case 'ggb':
-                window.open(`/ggb/ggb-editor.html?path=${encodeURIComponent(item.path)}`, '_ggb');
-                break;
-            default:
-                window.open(`${item.path}`, '_blank');
-        }
-    }
-});
-</script>
-```
+**Simply save files to the mounted directory to access them directly via browser through LAN or internet**
+### Configuration
+[Developer Documentation](./doc/dev.md)
 ## Online Demo
-Visit our online demo site: [https://geomath.icu:8080](https://geomath.icu:8080)
-## Notes
-- **When running fileVue.exe, ensure the port is not occupied.**
-- **Since fileVue.exe uses the compression middleware to compress files, the file size may show as unknown during download, but this does not affect the download.**
+Visit our demo site: [https://geomath.icu:8080](https://geomath.icu:8080)
+
+## Notes:
+**1. Ensure the port is available when running fileVue.exe.**
+**2. fileVue.exe uses compression middleware, so downloaded file size may show as unknown, but this doesn't affect the download.**
