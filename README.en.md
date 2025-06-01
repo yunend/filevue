@@ -1,7 +1,7 @@
 <div style="text-align: center; margin-bottom: 20px;">
-    <button onclick="toggleLanguage('cn')">中文</button>
-    <a href="./readme.en.md"><button>English</button></a>
-    <a href="./doc/dev.md"><button>Developer Docs</button></a>
+<a href="./README.md"><button>中文</button></a>
+<a href="./README.en.md"><button>English</button></a>
+<a href="./doc/dev.md"><button>Developer Doc</button></a>
 </div>
 
 # GeoGebra Classroom Presentation Solution
