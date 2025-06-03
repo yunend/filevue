@@ -61,7 +61,7 @@ Project is open source, contributions welcome:
 
 ### Installation
 1. Native Windows Installation:
-   - Download zip package: [fileVue-win-x64.zip](https://gitee.com/wangwangqin523/file-vue/raw/main/fileVue-win-x64.zip)
+   - Download zip package: [fileVue-win-x64.zip](https://github.com/yunend/filevue/releases/download/v2.0.0/fileVue-win-x64.zip)
    - Place `FileVue.exe`, `config.js` and `public` folder in the same directory
    - Double-click to run `FileVue.exe`
    - Open browser and visit `http://localhost:8888`
