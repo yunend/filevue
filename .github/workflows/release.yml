@@ -1,0 +1,27 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 匹配以v开头的标签，如v1.0.0
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Zip dist folder
+      run: |
+        zip -r fileVue-win-x64.zip dist/
+        
+    - name: Create release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: fileVue-win-x64.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
