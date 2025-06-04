@@ -189,23 +189,7 @@
     <!-- 导航栏 -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="#">
-            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                <!-- 文件夹主体 -->
-                <path d="M5 10h30v25H5z" fill="#007BFF" stroke="#0056b3" stroke-width="1" />
-                <!-- 文件夹顶部 -->
-                <path d="M5 10h30l-5-5H10z" fill="#F8F9FA" stroke="#0056b3" stroke-width="1" />
-                <!-- 放大镜 -->
-                <g transform="translate(25 25)">
-                    <circle cx="0" cy="0" r="6" fill="none" stroke="#FFA500" stroke-width="2" />
-                    <line x1="4" y1="4" x2="8" y2="8" stroke="#FFA500" stroke-width="2" stroke-linecap="round" />
-                </g>
-                <!-- 文件图标 -->
-                <g transform="translate(10 15)">
-                    <rect x="0" y="0" width="12" height="16" fill="#fff" stroke="#007BFF" stroke-width="1" />
-                    <line x1="0" y1="4" x2="12" y2="4" stroke="#007BFF" stroke-width="1" />
-                    <line x1="0" y1="8" x2="8" y2="8" stroke="#007BFF" stroke-width="1" />
-                </g>
-            </svg>
+            <img src="./images/logo.svg" width="40" height="40" alt="文件视界">
             <span style="margin-left: 10px;">文件视界</span>
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
@@ -261,7 +245,7 @@
 
         // 解析查询字符串为URLSearchParams对象
         const queryParams = new URLSearchParams(queryString);
-        let ggbFilePath = queryParams.has('path') ? queryParams.get('path'): ""; // 添加错误处理
+        let ggbFilePath = queryParams.has('path') ? queryParams.get('path') : ""; // 添加错误处理
         //let viewportWidth = window.innerWidth; // 视口宽度
         //let viewportHeight = window.innerHeight; // 视口高度
         let ggbAppletConfig = {
@@ -348,19 +332,19 @@
             toggleBtn.classList.toggle('active'); // 切换 active 类
         }
         // 新增：点击外部区域隐藏文件列表
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const fileList = document.querySelector('.file-list-container');
             const toggleBtn = document.querySelector('.toggle-btn');
-            
+
             // 如果点击的不是文件列表区域或切换按钮，且文件列表是可见的
             if (!fileList.contains(event.target) && !toggleBtn.contains(event.target) && fileList.classList.contains('show')) {
                 fileList.classList.remove('show');
                 toggleBtn.classList.remove('active');
             }
         });
-        
+
         // 阻止文件列表区域内的点击事件冒泡
-        document.querySelector('.file-list-container').addEventListener('click', function(event) {
+        document.querySelector('.file-list-container').addEventListener('click', function (event) {
             event.stopPropagation();
         });
 
@@ -381,26 +365,14 @@
         let target = document.body;
         let loading = document.getElementById('loading');
         function observe() {
-
-            let observer = new MutationObserver(() => {
-
-                // console.log(document.getElementsByClassName('MyCanvasButton').length);
-                if (document.getElementsByClassName('EuclidianPanel').length != 0) {
-                    loading.setAttribute('style', 'display:none');
-                    observer.disconnect();
+            const checkInterval = setInterval(() => {
+                if (document.getElementsByClassName('EuclidianPanel').length > 0) {
+                    loading.style.display = 'none';
+                    clearInterval(checkInterval);
                 }
-
-
-            });
-            observer.observe(target, {
-                attributes: true, // 布尔值，默认为 false。设置为 true 时，表示观察目标节点的属性变化。
-                childList: true, //布尔值，默认为 false。设置为 true 时，表示观察目标节点的子节点列表的变化，包括添加或删除子节点。
-                characterData: true, // 布尔值，默认为 false。设置为 true 时，表示观察目标节点文本内容的变化
-                subtree: true,// 布尔值，默认为 false。设置为 true 时，表示观察目标节点以及其所有后代节点的变化。
-                attributeOldValue: true,// 布尔值，默认为 false。如果设置为 true，则在回调函数的 MutationRecord 对象中包含被修改属性的旧值。
-            });
+            }, 100); // 每100毫秒检查一次
         }
-        //observe()   
+        observe()   
     </script>
     <!-- 页脚 -->
     <footer>
