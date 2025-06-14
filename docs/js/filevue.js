@@ -15,7 +15,7 @@ class FileVue {
             // 可以继续添加其他文件类型的处理
             default:
                 // 默认处理方式：打开文件链接
-                window.open(`https://124.223.50.99:8080${item.path}`, '_blank');
+                window.open(`https://geomath.icu:8080${item.path}`, '_blank');
             // window.location.href = `/${item.path}`;
         }
     }
@@ -52,7 +52,7 @@ async getFilesAndDirectories(path) {
     try {
         
         
-        const response = await fetch(`https://124.223.50.99:8080/list:${normalizedPath}`, {
+        const response = await fetch(`https://geomath.icu:8080/list:${normalizedPath}`, {
             method: 'GET', 
             headers: {
                 'Accept': 'application/json'
@@ -216,7 +216,7 @@ async getFilesAndDirectories(path) {
             } else {
                 // 根据配置决定是否显示下载链接
                 const downloadLink = this.config.showDownload ?
-                    `<a href="https://124.223.50.99:8080${item.path}" download class="fv-download-link" onclick="event.stopPropagation()">下载</a>` : '';
+                    `<a href="https://geomath.icu:8080${item.path}" download class="fv-download-link" onclick="event.stopPropagation()">下载</a>` : '';
 
                 listItem.innerHTML = `
                     <span class="fv-name">📄 ${item.name}</span>
