@@ -248,7 +248,7 @@
         //let ggbFilePath = queryParams.has('path') ? queryParams.get('path') : ""; // 添加错误处理
         // 在获取路径时添加IP地址
         let ggbFilePath = queryParams.has('path') ? 
-        `http://124.223.50.99:8888${queryParams.get('path')}` : "";
+        `https://geomath.icu:8080${queryParams.get('path')}` : "";
         //let viewportWidth = window.innerWidth; // 视口宽度
         //let viewportHeight = window.innerHeight; // 视口高度
         let ggbAppletConfig = {
@@ -304,7 +304,7 @@
                 const extension = item.name.split('.').pop().toLowerCase();
                 if (extension === 'ggb') {
                     let name = item.path;
-                    ggbAppletConfig.filename ="http://124.223.50.99:8888" +name;
+                    ggbAppletConfig.filename ="https://geomath.icu:8080" +name;
                     initGGBApplet(ggbAppletConfig);
                 }
             }

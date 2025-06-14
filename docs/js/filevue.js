@@ -48,21 +48,36 @@ class FileVue {
 
 // 获取文件与目录
 async getFilesAndDirectories(path) {
-    // 确保路径以斜杠开头
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    const response = await fetch(`http://124.223.50.99:8888/list:${normalizedPath}`);
-    if (!response.ok) throw new Error('Network response was not ok');
+    try {
+        console.log('Making request to:', `https://geomath.icu:8080/list:${normalizedPath}`);
+        
+        const response = await fetch(`https://geomath.icu:8080/list:${normalizedPath}`, {
+            method: 'GET', 
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
 
-    const data = await response.json();
-    
-    return data.map(item => {
-        if (item.path) {
-            item.path = item.path.replace(/\\/g, '/');
-            // 确保路径以斜杠开头
-            item.path = item.path.startsWith('/') ? item.path : `/${item.path}`;
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return item;
-    });
+        
+        const data = await response.json();
+        return data.map(item => {
+            if (item.path) {
+                item.path = item.path.replace(/\\/g, '/');
+                item.path = item.path.startsWith('/') ? item.path : `/${item.path}`;
+            }
+            return item;
+        });
+    } catch (error) {
+        console.error('Fetch error details:', {
+            error: error.message,
+            stack: error.stack
+        });
+        throw error;
+    }
 }
 
     // 获取目录
