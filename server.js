@@ -3,18 +3,12 @@ const { hideBin } = require('yargs/helpers');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const compression = require('compression');  // 新增
+const compression = require('compression');
 const app = express();
 
-// 在静态文件中间件之前添加压缩中间件
-app.use(compression({
-    level: 6, // 压缩级别，1-9，默认6
-    threshold: 512, // 最小压缩字节数，默认1KB
-    filter: (req, res) => {
-        // 自定义过滤哪些请求需要压缩
-        return true;
-    }
-}));
+
+
+
 
 // 添加默认配置
 // 修改配置加载方式
@@ -25,27 +19,33 @@ try {
         path.join(__dirname, 'config.js');
     config = require(configPath);
     
-    
     // Ensure staticFolder is defined in the loaded config
     if (!config.staticFolder) {
         config.staticFolder = 'public';
     }
+    // 添加跨域配置默认值
+    if (config.enableCORS === undefined) {
+        config.enableCORS = true;
+    }
 
-// 将相对路径转换为绝对路径
-if (!path.isAbsolute(config.staticFolder)) {
-    config.staticFolder = path.resolve(
-        process.pkg ? path.dirname(process.execPath) : __dirname,
-        config.staticFolder
-    );
-}    
+
+    // 将相对路径转换为绝对路径
+    if (!path.isAbsolute(config.staticFolder)) {
+        config.staticFolder = path.resolve(
+            process.pkg ? path.dirname(process.execPath) : __dirname,
+            config.staticFolder
+        );
+    }    
 } catch (e) {
-    // 修改配置加载逻辑，优先使用环境变量
+    // 使用硬编码默认值
     const config = {
-        port: process.env.PORT || 8001,
-        enableUpload: process.env.ENABLE_UPLOAD === 'true' || false,
-        staticFolder: process.env.STATIC_FOLDER || 'public'
+        port: 8001,
+        enableUpload: false,
+        staticFolder: 'public',
+        enableCORS: true  // 默认开启跨域
     };
 }
+
 // 解析命令行参数
 const argv = yargs(hideBin(process.argv))
   .option('port', {
@@ -66,6 +66,12 @@ const argv = yargs(hideBin(process.argv))
     description: '启用/禁用文件上传',
     default: config.enableUpload
   })
+  .option('cors', {
+    alias: 'c',
+    type: 'boolean',
+    description: '启用/禁用跨域支持',
+    default: config.enableCORS
+  })
   .help()
   .alias('help', 'h')
   .argv;
@@ -74,6 +80,17 @@ const argv = yargs(hideBin(process.argv))
 config.port = argv.port;
 config.staticFolder = argv.static;
 config.enableUpload = argv.upload;
+config.enableCORS = argv.cors;
+
+// 添加跨域中间件（根据配置决定是否启用）
+if (config.enableCORS) {
+    app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        next();
+    });
+}
 
 const multer = require('multer');
 
@@ -82,7 +99,15 @@ const multer = require('multer');
 let ROOT_PATH = config.staticFolder;
 
 app.use(express.static(ROOT_PATH));
-
+// 在静态文件中间件之前添加压缩中间件
+app.use(compression({
+    level: 6, // 压缩级别，1-9，默认6
+    threshold: 512, // 最小压缩字节数，默认1KB
+    filter: (req, res) => {
+        // 自定义过滤哪些请求需要压缩
+        return true;
+    }
+}));
 
 
 // 处理所有请求的正则表达式路由
@@ -162,6 +187,7 @@ if (require.main === module) {
             console.log(`服务器运行在 http://localhost:${config.port}`);
             console.log(`静态文件目录: ${config.staticFolder}`);
             console.log(`文件上传功能: ${config.enableUpload ? '已启用' : '已禁用'}`);
+            console.log(`跨域支持: ${config.enableCORS ? '已启用' : '已禁用'}`);  // 新增跨域状态提示
         });
 
         // 统一的错误处理函数

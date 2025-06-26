@@ -29,7 +29,8 @@ window.addEventListener("DOMContentLoaded", function () {
         showHeader: true,    // 是否显示文件列表头
         showDate: true,      // 是否显示文件日期
         showDownload: true,  // 是否显示下载链接
-        initialPath: '/'     // 初始化加载目录
+        initialPath: '/',     // 初始化加载目录
+        root: 'http://124.223.50.99:8888/',  // 服务器根路径,如果是当前服务器，可以配置为root:'/'
     });
 
     // 自定义文件类型处理
@@ -38,7 +39,7 @@ window.addEventListener("DOMContentLoaded", function () {
         const extension = item.name.split('.').pop().toLowerCase();
         switch (extension) {
             case 'ggb':
-                window.open(`/ggb/ggb-editor.html?path=${encodeURIComponent(item.path)}`, '_ggb');
+                window.open(`./ggb/ggb-editor.html?path=${encodeURIComponent(item.path)}`, '_ggb');
                 break;
             default:
                 window.open(`${item.path}`, '_blank');
@@ -80,10 +81,7 @@ systemctl enable filevue
 systemctl start filevue
 ```
 ## Everything HTTP 服务器兼容
-`filevue-e.js` 和 `ggbVue-e.html` 是专为与 Everything HTTP 服务器兼容而设计的版本。使用时:
-
-将 `filevue-e.js` 替换标准版 `fileVue.js`
-将 `ggbVue-e.html` 放在 /ggb/ 目录下
+`fileVue.js`中everything的getFilesAndDirectories注释取消，并将原来的getFilesAndDirectories注释掉，即可。
 ## 命令行使用
 ```bash
 filevue.exe -h  # 查看帮助
@@ -93,6 +91,7 @@ Options:
   -p, --port     设置服务器端口                         [number] [default: 8888]
   -s, --static   设置静态文件目录                [string] [default: "D:/public"]
   -u, --upload   启用/禁用文件上传                     [boolean] [default: true]
+  -c, --cors     启用/禁用跨域支持                     [boolean] [default: true]
   -h, --help     显示帮助信息 
   ```
 使用示例:
@@ -119,7 +118,7 @@ filevue.exe -p 9000 -s E:/teaching_files -u false
  * @returns {Promise<Array>} 返回包含文件和目录信息的数组
  *   每个元素格式: {name: string, type: 'file'|'directory', path: string, mtime: string}
  */
-const items = await fileVue.getFilesAndDirectories('/path/to/dir');
+const items = await fileVue.getFilesAndDirectories('http://localhost:8889/path/to/dir');
 ```
 ### getFiles(path)
 ```javascript
@@ -129,7 +128,7 @@ const items = await fileVue.getFilesAndDirectories('/path/to/dir');
  * @returns {Promise<Array>} 返回仅包含文件信息的数组
  *   每个元素格式: {name: string, type: 'file', path: string, mtime: string}
  */
-const files = await fileVue.getFiles('/path/to/dir');
+const files = await fileVue.getFiles('http://localhost:8889/path/to/dir');
 ```
 ### getDirectories(path)
 ```javascript
@@ -139,7 +138,7 @@ const files = await fileVue.getFiles('/path/to/dir');
  * @returns {Promise<Array>} 返回仅包含目录信息的数组
  *   每个元素格式: {name: string, type: 'directory', path: string, mtime: string}
  */
-const dirs = await fileVue.getDirectories('/path/to/dir');
+const dirs = await fileVue.getDirectories('http://localhost:8889/path/to/dir');
 ```
 ## Q&A
 ### Q: Windows下如何开机未登录系统自动启动？
