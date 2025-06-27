@@ -22,7 +22,7 @@ class FileVue {
             showDate: true,      // 是否显示文件日期
             showDownload: true,   // 是否显示“下载”链接
             initialPath: '/',     // 初始化时加载的目录
-            root: 'http://124.223.50.99:8888/', // 根路径，默认指向本地服务器
+            root: '/', // 根路径，默认指向本地服务器
         };
         this.currentData = []; // 用于存储当前目录数据
        
