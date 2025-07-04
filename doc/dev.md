@@ -81,7 +81,7 @@ systemctl enable filevue
 systemctl start filevue
 ```
 ## Everything HTTP 服务器兼容
-`fileVue.js`中everything的getFilesAndDirectories注释取消，并将原来的getFilesAndDirectories注释掉，即可。
+`fileVue.js`中everything的getFilesAndDirectories注释取消，并注释原来的getFilesAndDirectories，再修改root的值。
 ## 命令行使用
 ```bash
 filevue.exe -h  # 查看帮助
