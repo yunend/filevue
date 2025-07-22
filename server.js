@@ -127,6 +127,7 @@ app.get(/^\/list:(?:\/(.*))?\/?$/, (req, res) => {
                 }
                 const dirContents = files.map(file => {
                     const fileStats = fs.statSync(path.join(fullPath, file.name));
+                    console.log(fileStats.mtime.toISOString());
                     return {
                         name: file.name,
                         type: file.isDirectory() ? 'directory' : 'file',
