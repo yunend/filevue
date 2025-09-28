@@ -111,42 +111,40 @@ app.use(compression({
 
 
 // 处理所有请求的正则表达式路由
-app.get(/^\/list:(?:\/(.*))?\/?$/, (req, res) => {
+app.get(/^\/list:(?:\/(.*))?\/?$/, async (req, res) => {
     const requestedPath = req.params[0] || '';
     const fullPath = path.join(ROOT_PATH, requestedPath);
 
-    fs.stat(fullPath, (err, stats) => {
-        if (err) {
-            return res.status(404).json({ error: '文件或目录不存在' });
-        }
-
+    try {
+        const stats = await fs.promises.stat(fullPath);
+        
         if (stats.isDirectory()) {
-            fs.readdir(fullPath, { withFileTypes: true }, (err, files) => {
-                if (err) {
-                    return res.status(500).json({ error: '无法读取目录' });
-                }
-                const dirContents = files.map(file => {
-                    const fileStats = fs.statSync(path.join(fullPath, file.name));
-                    console.log(fileStats.mtime.toISOString());
-                    return {
-                        name: file.name,
-                        type: file.isDirectory() ? 'directory' : 'file',
-                        path: path.join(requestedPath, file.name),
-                        mtime: fileStats.mtime.toISOString() // 添加修改时间
-                    };
-                });
-                res.json(dirContents);
-				
-            });
+            const files = await fs.promises.readdir(fullPath, { withFileTypes: true });
+            const dirContents = await Promise.all(files.map(async (file) => {
+                const filePath = path.join(fullPath, file.name);
+                const fileStats = await fs.promises.stat(filePath);
+                return {
+                    name: file.name,
+                    type: file.isDirectory() ? 'directory' : 'file',
+                    path: path.join(requestedPath, file.name),
+                    mtime: fileStats.mtime.toISOString()
+                };
+            }));
+            res.json(dirContents);
         } else {
             res.json({
                 name: path.basename(fullPath),
                 type: 'file',
                 path: requestedPath,
-                mtime: stats.mtime.toISOString() // 添加修改时间
+                mtime: stats.mtime.toISOString()
             });
         }
-    });
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            return res.status(404).json({ error: '文件或目录不存在' });
+        }
+        return res.status(500).json({ error: '无法读取目录' });
+    }
 });
 
 // 根据配置决定是否启用文件上传功能

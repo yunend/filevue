@@ -67,7 +67,7 @@ Description=FileVue Service
 After=network.target
 
 [Service]
-ExecStart=/path/to/fileVue.exe
+ExecStart=/path/to/fileVue
 WorkingDirectory=/path/to/
 Restart=always
 User=root
@@ -81,7 +81,7 @@ systemctl enable filevue
 systemctl start filevue
 ```
 ## Everything HTTP 服务器兼容
-`fileVue.js`中everything的getFilesAndDirectories注释取消，并注释原来的getFilesAndDirectories，再修改root的值。
+`fileVue.js`中everything的getFilesAndDirectories注释取消，并注释原来的getFilesAndDirectories，再修改root的值，例如`root: 'http://124.223.50.99:8888/'`。
 ## 命令行使用
 ```bash
 filevue.exe -h  # 查看帮助
