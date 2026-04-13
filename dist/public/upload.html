@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文件视界</title>
-    <link rel="shortcut icon" href="./images/logo.ico" type="image/x-icon">
-    <link rel="stylesheet" href="./css/bootstrap4.min.css">
+    <link rel="shortcut icon" href="/images/logo.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/bootstrap4.min.css">
    
-    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="/css/common.css">
    
     <style>
         .upload-container {
@@ -17,13 +17,46 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress {
+            height: 25px;
+            margin-bottom: 10px;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .file-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .upload-status {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .upload-success {
+            color: #28a745;
+        }
+        .upload-error {
+            color: #dc3545;
+        }
+        .upload-warning {
+            color: #ffc107;
+        }
+        /* 添加按钮样式 */
+        .btn-cancel {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
    <!-- 导航栏 -->
    <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand" href="#">
-        <img src="./images/logo.svg" width="40" height="40" alt="文件视界">
+        <img src="/images/logo.svg" width="40" height="40" alt="文件视界">
         <span style="margin-left: 10px;">文件视界</span>
     </a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
@@ -35,13 +68,13 @@
                 <a class="nav-link" href="/">首页</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="./upload.html">上传文件</a>
+                <a class="nav-link" href="/upload.html">上传文件</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="./ggb/GeoGebra/HTML5/5.0/GeoGebra.html" target="_blank">GGB编辑</a>
+                <a class="nav-link" href="/ggb/GeoGebra/HTML5/5.0/GeoGebra.html" target="_blank">GGB编辑</a>
             </li>
         </ul>
-        <!-- 添加“关于”按钮 -->
+        <!-- 添加"关于"按钮 -->
         <ul class="navbar-nav ml-auto">
             <li class="nav-item">
                 <a class="nav-link" href="#" data-toggle="modal" data-target="#aboutModal">关于</a>
@@ -50,7 +83,7 @@
     </div>
 </nav>
 
-<!-- 添加“关于”模态框 -->
+<!-- 添加"关于"模态框 -->
 <div class="modal fade" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="aboutModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -74,16 +107,35 @@
     <!-- 主体内容 -->
     <div class="container">
         <div class="upload-container">
-            <h2 class="text-center mb-4">文件上传</h2>
+            <h2 class="text-center mb-4">多文件上传</h2>
             <form id="uploadForm">
                 <div class="form-group">
-                    <input type="file" class="form-control-file" id="fileInput" required>
+                    <input type="file" class="form-control-file" id="fileInput" required multiple>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">上传文件</button>
+                <button type="submit" class="btn btn-primary btn-block" id="uploadBtn">上传文件</button>
             </form>
-            <div id="message" class="mt-3 text-center"></div>
+            <div class="mt-3 text-danger">每个文件不能大于1G</div>
+            
+            <!-- 进度条容器 -->
+            <div id="progressContainer" class="progress-container">
+                <h5 class="mb-3">上传进度</h5>
+                <div id="overallProgress" class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
+                </div>
+                <div id="currentFileInfo" class="file-info"></div>
+                <div id="uploadStatus" class="upload-status"></div>
+                <!-- 取消上传按钮 -->
+                <div class="text-center mt-3">
+                    <button id="cancelBtn" class="btn btn-danger btn-sm" style="display: none;">
+                        <i class="fas fa-times-circle"></i> 取消上传
+                    </button>
+                </div>
+            </div>
+            
+            <div id="message" class="mt-1 text-center"></div>
         </div>
     </div>
+
 
     <!-- 页脚 -->
     <footer>
@@ -92,27 +144,228 @@
         </div>
     </footer>
 
-    <script src="./js/jquery.min.js"></script>
-    <script src="./js/bootstrap4.min.js"></script>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap4.min.js"></script>
     <script>
+        class UploadManager {
+            constructor() {
+                this.totalFiles = 0;
+                this.uploadedFiles = 0;
+                this.totalSize = 0;
+                this.uploadedSize = 0;
+                this.currentFile = null;
+            }
+
+            // 格式化文件大小
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // 更新总进度
+            updateOverallProgress() {
+                const overallProgress = (this.uploadedFiles / this.totalFiles) * 100;
+                const overallBar = document.querySelector('#overallProgress .progress-bar');
+                overallBar.style.width = overallProgress + '%';
+                overallBar.textContent = Math.round(overallProgress) + '%';
+                
+                // 更新进度条颜色
+                if (overallProgress >= 100) {
+                    overallBar.classList.remove('progress-bar-animated');
+                    overallBar.classList.add('bg-success');
+                }
+            }
+
+            // 更新当前文件信息
+            updateCurrentFileInfo(file, progress) {
+                const fileInfo = document.getElementById('currentFileInfo');
+                const progressPercent = Math.round(progress * 100);
+                fileInfo.innerHTML = `
+                    <strong>当前文件:</strong> ${file.name} 
+                    <span class="text-muted">(${this.formatFileSize(file.size)})</span>
+                    <span class="float-right">${progressPercent}%</span>
+                `;
+            }
+
+            // 更新上传状态
+            updateUploadStatus(message, type = 'info') {
+                const statusDiv = document.getElementById('uploadStatus');
+                statusDiv.innerHTML = `<span class="upload-${type}">${message}</span>`;
+            }
+
+            // 开始上传
+            startUpload(files) {
+                this.totalFiles = files.length;
+                this.uploadedFiles = 0;
+                this.totalSize = 0;
+                this.uploadedSize = 0;
+                this.currentXHR = null;
+
+                // 计算总大小
+                for (let file of files) {
+                    this.totalSize += file.size;
+                }
+
+                // 显示进度容器
+                const progressContainer = document.getElementById('progressContainer');
+                progressContainer.style.display = 'block';
+
+                // 重置进度条
+                const overallBar = document.querySelector('#overallProgress .progress-bar');
+                overallBar.style.width = '0%';
+                overallBar.textContent = '0%';
+                overallBar.classList.remove('bg-success');
+                overallBar.classList.add('progress-bar-animated');
+
+                // 禁用上传按钮，显示取消按钮
+                document.getElementById('uploadBtn').disabled = true;
+                document.getElementById('cancelBtn').style.display = 'inline-block';
+
+                this.updateUploadStatus(`准备上传 ${this.totalFiles} 个文件，总大小: ${this.formatFileSize(this.totalSize)}`, 'info');
+                this.updateOverallProgress();
+
+                // 逐个上传文件
+                this.uploadFilesSequentially(files);
+            }
+
+            // 顺序上传文件
+            async uploadFilesSequentially(files) {
+                for (let i = 0; i < files.length; i++) {
+                    
+                    this.currentFile = files[i];
+                    await this.uploadSingleFile(this.currentFile);
+                    this.uploadedFiles++;
+                    this.updateOverallProgress();
+                }
+
+                this.finishUpload();
+            }
+
+            // 上传单个文件
+            uploadSingleFile(file) {
+                return new Promise((resolve, reject) => {
+
+                    
+
+                    const formData = new FormData();
+                    formData.append('files', file);
+
+                    const xhr = new XMLHttpRequest();
+                    this.currentXHR = xhr;
+
+                    // 监听上传进度
+                    xhr.upload.addEventListener('progress', (e) => {
+                        if (e.lengthComputable) {
+                            const progress = e.loaded / e.total;
+                            this.updateCurrentFileInfo(file, progress);
+                        }
+                    });
+
+                    // 监听完成
+                    xhr.addEventListener('load', () => {
+                        if (xhr.status === 200) {
+                            this.uploadedSize += file.size;
+                            this.updateUploadStatus(`文件 "${file.name}" 上传成功`, 'success');
+                            resolve();
+                        } else {
+                            this.updateUploadStatus(`文件 "${file.name}" 上传失败: ${xhr.statusText}`, 'error');
+                            reject(new Error(`上传失败: ${xhr.statusText}`));
+                        }
+                    });
+
+                    // 监听错误
+                    xhr.addEventListener('error', () => {
+                        this.updateUploadStatus(`文件 "${file.name}" 上传出错`, 'error');
+                        reject(new Error('网络错误'));
+                    });
+
+                    // 监听中止
+                    xhr.addEventListener('abort', () => {
+                        reject(new Error('上传已取消'));
+                    });
+
+                    xhr.open('POST', '/upload');
+                    xhr.send(formData);
+                });
+            }
+
+            // 完成上传
+            finishUpload() {
+                
+                // 启用上传按钮，隐藏取消按钮
+                document.getElementById('uploadBtn').disabled = false;
+                document.getElementById('cancelBtn').style.display = 'none';
+
+                if (this.uploadedFiles === this.totalFiles) {
+                    this.updateUploadStatus(`所有文件上传完成！共上传 ${this.uploadedFiles} 个文件，总大小: ${this.formatFileSize(this.uploadedSize)}`, 'success');
+                    
+                    // 清空文件输入
+                    document.getElementById('fileInput').value = '';
+                    
+                    // 5秒后隐藏进度容器
+                    setTimeout(() => {
+                        document.getElementById('progressContainer').style.display = 'none';
+                    }, 5000);
+                } else {
+                    this.updateUploadStatus(`上传完成，共成功上传 ${this.uploadedFiles}/${this.totalFiles} 个文件`, 'warning');
+                }
+            }
+
+            // 取消上传
+            cancelUpload() {
+                 // 中止当前正在进行的XMLHttpRequest
+                if (this.currentXHR) {
+                    this.currentXHR.abort();
+                    this.currentXHR = null;
+                }
+                this.updateUploadStatus('上传已取消', 'warning');
+                // 启用上传按钮，隐藏取消按钮
+                document.getElementById('uploadBtn').disabled = false;
+                document.getElementById('cancelBtn').style.display = 'none';
+            }
+        }
+
+        // 初始化上传管理器
+        const uploadManager = new UploadManager();
+
         document.getElementById('uploadForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const formData = new FormData();
-            formData.append('file', document.getElementById('fileInput').files[0]);
+            const files = document.getElementById('fileInput').files;
+            if (files.length === 0) {
+                document.getElementById('message').textContent = '请选择要上传的文件';
+                return;
+            }
 
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('message').textContent = data.message;
-                document.getElementById('fileInput').value = '';
-            })
-            .catch(error => {
-                document.getElementById('message').textContent = '上传失败: ' + error.message;
-            });
+            // 检查文件大小限制
+            for (let file of files) {
+                if (file.size > 1024 * 1024 * 1024) { // 1GB
+                    document.getElementById('message').textContent = `文件 "${file.name}" 超过1GB大小限制`;
+                    return;
+                }
+            }
+
+            document.getElementById('message').textContent = '';
+            uploadManager.startUpload(files);
+        });
+
+        // 添加取消上传按钮事件监听
+        document.getElementById('cancelBtn').addEventListener('click', function() {
+            if (confirm('确定要取消上传吗？')) {
+                    uploadManager.cancelUpload();
+                }
+        });
+
+        // 添加取消上传功能- ESC键
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (confirm('确定要取消上传吗？')) {
+                    uploadManager.cancelUpload();
+                }
+            }
         });
     </script>
 </body>

@@ -171,6 +171,7 @@
           delete parameters.height
         }
         loadedAppletType = type;
+        console.log('type是:',type,parameters.height)
         if (type === "screenshot") {
           injectScreenshot(appletElem, parameters)
         } else {
@@ -184,6 +185,7 @@
             loadedAppletType = "screenshot";
             injectPlayButton(appletElem, parameters, noPreview, type)
           } else {
+            console.log("到这:",appletElem,parameters,noPreview)
             injectHTML5Applet(appletElem, parameters, noPreview)
           }
         }
@@ -355,6 +357,7 @@
         noPreview = true
       }
       var loadScript = !isRenderGGBElementEnabled && !scriptLoadStarted;
+      console.log("loadScript:",loadScript)
       if (!isRenderGGBElementEnabled && !scriptLoadStarted || (ggbHTML5LoadedCodebaseVersion !== html5CodebaseVersion || ggbHTML5LoadedCodebaseIsWebSimple && !html5CodebaseIsWebSimple)) {
         loadScript = true;
         isRenderGGBElementEnabled = false;
@@ -365,8 +368,11 @@
       var oriWidth = parameters.width;
       var oriHeight = parameters.height;
       parameters.disableAutoScale = parameters.disableAutoScale === undefined ? GGBAppletUtils.isFlexibleWorksheetEditor() : parameters.disableAutoScale;
+      console.log("不能自动scale:",parameters.disableAutoScale)
       if (parameters.width !== undefined) {
         if (parseVersion(html5CodebaseVersion) <= 4.4) {
+
+          
           if (valBoolean(parameters.showToolBar)) {
             parameters.height -= 7
           }
@@ -379,6 +385,7 @@
           }
         } else {
           var minWidth = 100;
+          console.log("valB:",valBoolean(parameters.showToolBar));
           if (valBoolean(parameters.showToolBar) || valBoolean(parameters.showMenuBar)) {
             if (parameters.hasOwnProperty("customToolBar")) {
               parameters.customToolbar = parameters.customToolBar
@@ -394,6 +401,7 @@
       article.style.border = "none";
       article.style.display = "inline-block";
       for (var key in parameters) {
+        
         if (parameters.hasOwnProperty(key) && key !== "appletOnLoad") {
           article.setAttribute("data-param-" + key, parameters[key])
         }
@@ -407,15 +415,26 @@
       window.addEventListener("resize", (function (evt) {
         applet.resize()
       }));
+
+      console.log("显示parameters.appletOnLoad:",parameters.appletOnLoad)
+      console.log("显示!noPreview:",!noPreview)
       var oriAppletOnload = typeof parameters.appletOnLoad === "function" ? parameters.appletOnLoad : function () {};
       if (!noPreview && parameters.width !== undefined) {
         if (!parameters.hasOwnProperty("showSplash")) {
           article.setAttribute("data-param-showSplash", "false")
         }
         var previewPositioner = appletElem.querySelector(".applet_scaler.prerender");
+
+        console.log("显示previewPositioner:",previewPositioner)
+
         var preRendered = previewPositioner !== null;
+
+        console.log("显示preRendered:",preRendered)
         if (!preRendered) {
           var previewContainer = createScreenShotDiv(oriWidth, oriHeight, parameters.borderColor, false);
+           
+          console.log("显示previewContainer:",previewContainer)
+
           previewPositioner = document.createElement("div");
           previewPositioner.className = "applet_scaler";
           previewPositioner.style.position = "relative";
@@ -425,29 +444,46 @@
         } else {
           var previewContainer = previewPositioner.querySelector(".ggb_preview")
         }
+        console.log("window.GGBT_spinner:",window.GGBT_spinner)
         if (window.GGBT_spinner) {
           window.GGBT_spinner.attachSpinner(previewPositioner, "66%")
         }
+
+         console.log("显示parseVersion(html5CodebaseVersion):",parseVersion(html5CodebaseVersion))
         if (parseVersion(html5CodebaseVersion) >= 5) {
           parameters.appletOnLoad = function (api) {
             var preview = appletElem.querySelector(".ggb_preview");
+
+            console.log("显示preview:",preview)
+
             if (preview) {
               preview.parentNode.removeChild(preview)
             }
             if (window.GGBT_spinner) {
               window.GGBT_spinner.removeSpinner(previewPositioner)
             }
+            console.log("显示window.GGBT_wsf_view:",window.GGBT_wsf_view)
             if (window.GGBT_wsf_view) {
               $(window).trigger("resize")
             }
+            console.log("api:",api)
             oriAppletOnload(api)
+            console.log("现在parameters:",parameters)
+            
           };
+
+          console.log("显示!preRendered:",!preRendered)
+
           if (!preRendered) {
+            console.log("显示previewContainer:",previewContainer)
+            console.log("显示previewPositioner:",previewPositioner)
             previewPositioner.appendChild(previewContainer)
           }
         } else {
           article.appendChild(previewContainer)
         }
+
+        console.log("显示article:",article)
         previewPositioner.appendChild(article);
         if (!preRendered) {
           appletElem.appendChild(previewPositioner)
@@ -462,13 +498,18 @@
         appletScaler.style.display = "block";
         appletScaler.appendChild(article);
         appletElem.appendChild(appletScaler);
+        
         parameters.appletOnLoad = function (api) {
           applet.resize();
           oriAppletOnload(api)
+
+        
         }
+        
       }
 
       function renderGGBElementWithParams(article, parameters) {
+        console.log("renderGGBElement:",renderGGBElement)
         if (parameters && typeof parameters.appletOnLoad === "function" && typeof renderGGBElement === "function") {
           renderGGBElement(article, parameters.appletOnLoad)
         } else {
@@ -502,6 +543,8 @@
           renderGGBElementWithParams(a, parameters)
         }
       }
+
+      console.log("显示loadScript:",loadScript)
       if (loadScript) {
         scriptLoadStarted = true;
         for (var i = 0; i < article.childNodes.length; i++) {
@@ -511,6 +554,7 @@
             i--
           }
         }
+        console.log("显示ggbHTML5LoadedScript:",ggbHTML5LoadedScript)
         if (ggbHTML5LoadedScript !== null) {
           var el = document.querySelector('script[src="' + ggbHTML5LoadedScript + '"]');
           if (el !== undefined && el !== null) {
@@ -522,6 +566,9 @@
           renderGGBElementOnTube(article, parameters)
         };
         script.src = html5Codebase + html5CodebaseScript;
+
+        console.log("script.src:",script.src)
+        
         ggbHTML5LoadedCodebaseIsWebSimple = html5CodebaseIsWebSimple;
         ggbHTML5LoadedCodebaseVersion = html5CodebaseVersion;
         ggbHTML5LoadedScript = script.src;
@@ -530,13 +577,18 @@
           if (html5CodebaseIsWebSimple) {
             webSimple.succeeded = webSimple.succeeded || webSimple()
           } else {
+           
             web3d.succeeded = web3d.succeeded || web3d()
           }
+          
           scriptLoaded()
+
         } else if (html5Codebase.requirejs) {
           require(["geogebra/runtime/js/web3d/web3d.nocache"], scriptLoaded)
         } else {
+          console.log("-----------------------")
           script.onload = scriptLoaded;
+          console.log("appletElem:",appletElem)
           appletElem.appendChild(script)
         }
       } else {
@@ -545,6 +597,8 @@
       parameters.height = oriHeight;
       parameters.width = oriWidth
     };
+
+
     var injectScreenshot = function (appletElem, parameters, showPlayButton) {
       var previewContainer = createScreenShotDiv(parameters.width, parameters.height, parameters.borderColor, showPlayButton);
       var previewPositioner = document.createElement("div");
@@ -840,6 +894,7 @@
     }
     return applet
   };
+
   var GGBAppletUtils = function () {
     "use strict";
 
@@ -1033,6 +1088,8 @@
 
     function responsiveResize(appletElem, parameters) {
       var article = appletElem.querySelector(".appletParameters");
+      console.log("响应式article,window.GGBT_wsf_view:",article,window.GGBT_wsf_view)
+
       if (article) {
         if (typeof window.GGBT_wsf_view === "object" && window.GGBT_wsf_view.isFullscreen()) {
           if (parameters.id !== article.getAttribute("data-param-id")) {
@@ -1044,6 +1101,9 @@
           return
         }
         var scale = getScale(parameters, appletElem);
+
+        console.log("isFlexibleWorksheetEditor():",isFlexibleWorksheetEditor())
+
         if (isFlexibleWorksheetEditor()) {
           article.setAttribute("data-param-scale", scale)
         }
@@ -1058,10 +1118,14 @@
           return
         }
         var appName = parameters.id !== undefined ? parameters.id : "ggbApplet";
+        console.log("appName:",appName)
         var app = window[appName];
+        console.log("app",app)
         if ((app == null || !app.recalculateEnvironments) && scaleElem !== null && !scaleElem.className.match(/fullscreen/)) {
           scaleElem.parentNode.style.transform = "";
           if (!isNaN(scale) && scale !== 1) {
+            console.log("显示scale:",scale)
+
             scaleElem.parentNode.style.width = parameters.width * scale + "px";
             scaleElem.parentNode.style.height = parameters.height * scale + "px";
             scaleElement(scaleElem, scale)
@@ -1087,11 +1151,15 @@
       scaleElement: scaleElement
     }
   }();
+
+
+
   if (typeof define === "function" && define.amd) {
     define([], (function () {
       return GGBApplet
     }))
   }
+
   GGBAppletUtils.makeModule = function (name, permutation) {
     function webModule() {
       var I = "bootstrap",
@@ -1567,8 +1635,11 @@
     }
     return webModule
   };
+
+
   if (typeof window.web3d !== "function") {
     window.web3d = GGBAppletUtils.makeModule("web3d", "2E4AB5EF8F563036A0AFAADA47CC4EA4")
+    
   }
   if (typeof window.webSimple !== "function") {
     window.webSimple = GGBAppletUtils.makeModule("webSimple", "52920F0331827B4A25CCA14713B131C1")
