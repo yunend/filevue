@@ -7,7 +7,9 @@
     "start": "node server.js",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "build": "pkg . --targets node12.22.11-win-x64 --output ./dist/filevue.exe"
+    "build-win64": "pkg . --targets node12.22.11-win-x64 --output ./dist/filevue64.exe",
+    "build-linux64": "pkg . --targets node12.22.11-linux-x64 --output ./dist/filevue64",
+    "build-linuxarm": "pkg . --targets node12.22.11-linux-arm --output ./dist/filevue-arm64"
   },
   "keywords": [],
   "author": "",
