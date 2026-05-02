@@ -25,8 +25,8 @@ As a mathematics teacher, I frequently need to demonstrate dynamic plane and sol
 | This Project| Yes                | Yes         | Yes         |
 
 ### Advantages
-1. 🧩 **Frontend-Backend Separation**: Backend can flexibly use various programming languages and frameworks to recursively send file directories; Frontend handled by `fileVue.js`, no additional dependencies required
-2. 📦 **Packaged Library**: `fileVue.js` uses library packaging to ensure independent runtime environment
+1. 🧩 **Frontend-Backend Separation**: Backend can flexibly use various programming languages and frameworks to recursively send file directories; Frontend handled by `filevue.js`, no additional dependencies required
+2. 📦 **Packaged Library**: `filevue.js` uses library packaging to ensure independent runtime environment
 3. 🎨 **Non-intrusive Design**: Frontend supports custom handling for any file extensions including `.ggb`
 4. ⚡ **Performance Optimization**: Backend supports caching and file compression, significantly improving access speed with fast `.ggb` file response
 5. 🛠️ **Flexible Configuration**: Supports both frontend and backend configuration to meet personalized needs

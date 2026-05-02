@@ -4,7 +4,7 @@ class FileVue {
         const extension = item.name.split('.').pop().toLowerCase();
         switch (extension) {
             case 'ggb':
-                window.open(`./ggb/ggbVue.html?path=${encodeURIComponent(item.path)}`, '_ggb');
+                window.open(`./ggb/ggbvue.html?path=${encodeURIComponent(item.path)}`, '_ggb');
                 break;
             default:
                 window.open(item.path, '_blank');

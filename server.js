@@ -6,29 +6,60 @@ const path = require('path');
 const compression = require('compression');
 const app = express();
 
-
+// 解析请求体的中间件
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+const multer = require('multer');
 let config;
-// 添加默认配置
-// 修改配置加载方式
-try {
+
+//统一的错误处理函数
+function handleError(err) {
+    console.error('程序错误:', err.message);
+    if (err instanceof SyntaxError) {
+        console.error('配置文件格式错误,请检查config.json文件格式');
+    }
+    console.error('程序将在5秒后退出...');
+    setTimeout(() => {
+        process.exit(1);
+    }, 5000);
+}
+
+function loadConfig(){
     const configPath = process.pkg ? 
         path.join(path.dirname(process.execPath), 'config.json') : 
         path.join(__dirname, 'config.json');
     
+    // 检查配置文件是否存在
+    if (!fs.existsSync(configPath)) {
+        console.log('配置文件不存在，正在创建默认配置文件...');
+        
+        // 创建默认配置
+        const defaultConfig = {
+            port: 8001,
+            enableUpload: false,
+            staticFolder: 'public',
+            enableCORS: true
+        };
+        
+        // 写入默认配置文件
+        fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2), 'utf8');
+        console.log(`默认配置文件已创建: ${configPath}`);
+        
+        config = defaultConfig;
+    } else {
         // 读取 JSON 配置文件
         const configContent = fs.readFileSync(configPath, 'utf8');
         config = JSON.parse(configContent);
-   
+    }
     
-    // Ensure staticFolder is defined in the loaded config
+    // 静态文件配置默认值
     if (!config.staticFolder) {
         config.staticFolder = 'public';
     }
-    // 添加跨域配置默认值
+    // 跨域配置默认值
     if (config.enableCORS === undefined) {
         config.enableCORS = true;
     }
-
 
     // 将相对路径转换为绝对路径
     if (!path.isAbsolute(config.staticFolder)) {
@@ -37,20 +68,9 @@ try {
             config.staticFolder
         );
     }    
-} catch (e) {
-     // 输出具体的错误信息
-    console.error("配置加载过程中发生错误:", e.message);
-    console.error("错误堆栈:", e.stack);
-    // 使用硬编码默认值
-    config = {
-        port: 8001,
-        enableUpload: false,
-        staticFolder: 'public',
-        enableCORS: true  // 默认开启跨域
-    };
 }
 
-// 解析命令行参数
+function parseArg(){
 const argv = yargs(hideBin(process.argv))
   .option('port', {
     alias: 'p',
@@ -86,11 +106,13 @@ config.staticFolder = argv.static;
 config.enableUpload = argv.upload;
 config.enableCORS = argv.cors;
 
-// 添加解析请求体的中间件
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+}
+// 解析命令行参数
 
-// 添加跨域中间件（根据配置决定是否启用）
+
+function routeApp(){
+
+    // 添加跨域中间件（根据配置决定是否启用）
 if (config.enableCORS) {
     app.use((req, res, next) => {
         res.header('Access-Control-Allow-Origin', '*');
@@ -99,8 +121,6 @@ if (config.enableCORS) {
         next();
     });
 }
-
-const multer = require('multer');
 
 
 // 设置根目录
@@ -154,11 +174,6 @@ app.get(/^\/list:(?:\/(.*))?\/?$/, async (req, res) => {
         return res.status(500).json({ error: '无法读取目录' });
     }
 });
-
-
-
-
-
 
 // 根据配置决定是否启用文件上传功能
 if (config.enableUpload) {
@@ -233,23 +248,22 @@ if (config.enableUpload) {
     
     
 }
+
+}
+
+
 // 启动服务器
 if (require.main === module) {
     try {
+        loadConfig();
+        parseArg();
+        routeApp();
         const server = app.listen(config.port, () => {
             console.log(`服务器运行在 http://localhost:${config.port}`);
             console.log(`静态文件目录: ${config.staticFolder}`);
             console.log(`文件上传功能: ${config.enableUpload ? '已启用' : '已禁用'}`);
-            console.log(`跨域支持: ${config.enableCORS ? '已启用' : '已禁用'}`);  // 新增跨域状态提示
+            console.log(`跨域支持: ${config.enableCORS ? '已启用' : '已禁用'}`);  
         });
-
-        // 统一的错误处理函数
-        const handleError = (err) => {
-            console.error('服务器错误，10秒后退出程序:', err.message);
-            setTimeout(() => {
-                process.exit(1);
-            }, 10000);
-        };
 
         server.on('error', handleError);
     } catch (err) {

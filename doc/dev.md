@@ -11,14 +11,14 @@ module.exports = {
 ```
 
 ## 客户端配置
-在html文件中引入fileVue.js与fileVue.css，以及fileListContainer
+在html文件中引入filevue.js与filevue.css，以及fileListContainer
 ```html
 <head>
-    <link rel="stylesheet" href="/css/fileVue.css">
+    <link rel="stylesheet" href="/css/filevue.css">
 </head>
 <body>
     <div id="fileListContainer"></div>
-    <script src="/js/fileVue.js"></script>
+    <script src="/js/filevue.js"></script>
 </body>
 ```
 如果不配置则使用默认配置；如需要配置则增加以下代码
@@ -81,7 +81,7 @@ systemctl enable filevue
 systemctl start filevue
 ```
 ## Everything HTTP 服务器兼容
-`fileVue.js`中everything的getFilesAndDirectories注释取消，并注释原来的getFilesAndDirectories，再修改root的值，例如`root: 'http://124.223.50.99:8888/'`。
+`filevue.js`中everything的getFilesAndDirectories注释取消，并注释原来的getFilesAndDirectories，再修改root的值，例如`root: 'http://124.223.50.99:8888/'`。
 ## 命令行使用
 ```bash
 filevue.exe -h  # 查看帮助
