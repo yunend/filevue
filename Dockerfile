@@ -14,7 +14,7 @@ COPY config.js ./
 
 # 先创建目标目录再复制
 RUN mkdir -p public-bak
-COPY public/ ./public-bak/
+COPY dist/public/ ./public-bak/
 
 
 ENV NODE_ENV=production
