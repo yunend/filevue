@@ -12,7 +12,7 @@ COPY package*.json ./
 COPY server.js ./
 COPY config.js ./
 
-# 或者先创建目标目录再复制
+# 先创建目标目录再复制
 RUN mkdir -p public-bak
 COPY public/ ./public-bak/
 

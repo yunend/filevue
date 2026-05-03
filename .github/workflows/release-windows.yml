@@ -1,0 +1,41 @@
+name: Release Windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Build for Windows
+      run: npm run build-win
+      
+    - name: Zip dist folder
+      run: |
+        Compress-Archive -Path "dist/*" -DestinationPath "fileVue-win-x64.zip" -Force
+        
+    - name: Create release
+      uses: ncipollo/release-action@v1
+      with:
+        name: FileVue Windows Release
+        tag: ${{ github.ref_name }}
+        artifacts: fileVue-win-x64.zip
+        allowUpdates: true
+        omitBody: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
