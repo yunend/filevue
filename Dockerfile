@@ -10,7 +10,7 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./
 COPY server.js ./
-COPY config.js ./
+COPY config.json ./
 
 # 先创建目标目录再复制
 RUN mkdir -p public-bak

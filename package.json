@@ -1,6 +1,6 @@
 {
   "name": "file-vue",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "main": "server.js",
   "bin": "./server.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "test:coverage": "jest --coverage",
     "build-win": "pkg . --targets node12.22.11-win-x64 --output ./dist/filevue-x64.exe",
     "build-linux": "pkg . --targets node12.22.11-linux-x64 --output ./dist/filevue-linux-x64",
-    "build-linuxarm": "pkg . --targets node12.22.11-linux-arm64 --output ./dist/filevue-linux-arm64"
+    "build-linuxarm": "pkg . --targets node12.22.11-linux-arm64 --output ./dist/filevue-linux-arm64",
+    "build-mac": "pkg . --targets node12.22.11-macos-x64 --output ./dist/filevue-macos-x64"
   },
   "keywords": [],
   "author": "",

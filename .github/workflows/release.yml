@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-windows:
-    name: Build Windows Release
+    name: Build Windows x64
     runs-on: windows-latest
     
     steps:
@@ -37,8 +37,8 @@ jobs:
         path: fileVue-win-x64.zip
         retention-days: 1
 
-  build-linux:
-    name: Build Linux Release
+  build-linux-x64:
+    name: Build Linux x64
     runs-on: ubuntu-latest
     
     steps:
@@ -54,25 +54,90 @@ jobs:
     - name: Install dependencies
       run: npm install
       
-    - name: Build for Linux
+    - name: Build for Linux x64
       run: npm run build-linux
       
-    - name: Zip dist folder for Linux
+    - name: Zip dist folder for Linux x64
       run: |
         cd dist/
         zip -r ../fileVue-linux-x64.zip *
         
-    - name: Upload Linux artifact
+    - name: Upload Linux x64 artifact
       uses: actions/upload-artifact@v4
       with:
         name: fileVue-linux-x64
         path: fileVue-linux-x64.zip
         retention-days: 1
 
+  build-linux-arm64:
+    name: Build Linux ARM64
+    runs-on: ubuntu-22.04-arm
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js for ARM64
+      uses: actions/setup-node@v4
+      with:
+        node-version: '14'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Build for Linux ARM64
+      run: npm run build-linuxarm
+      
+    - name: Zip dist folder for Linux ARM64
+      run: |
+        cd dist/
+        zip -r ../fileVue-linux-arm64.zip *
+        
+    - name: Upload Linux ARM64 artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: fileVue-linux-arm64
+        path: fileVue-linux-arm64.zip
+        retention-days: 1
+
+  build-macos:
+    name: Build macOS x64
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js for macOS
+      uses: actions/setup-node@v4
+      with:
+        node-version: '14'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Build for macOS
+      run: npm run build-mac
+      
+    - name: Create DMG for macOS (可选)
+      run: |
+        # macOS通常使用.app包或直接可执行文件
+        cd dist/
+        zip -r ../fileVue-macos-x64.zip *
+        
+    - name: Upload macOS artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: fileVue-macos-x64
+        path: fileVue-macos-x64.zip
+        retention-days: 1
+
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux-x64, build-linux-arm64, build-macos]
     
     steps:
     - name: Download Windows artifact
@@ -80,17 +145,27 @@ jobs:
       with:
         name: fileVue-win-x64
         
-    - name: Download Linux artifact
+    - name: Download Linux x64 artifact
       uses: actions/download-artifact@v4
       with:
         name: fileVue-linux-x64
+        
+    - name: Download Linux ARM64 artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: fileVue-linux-arm64
+        
+    - name: Download macOS artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: fileVue-macos-x64
         
     - name: Create release
       uses: ncipollo/release-action@v1
       with:
         name: FileVue ${{ github.ref_name }} Multi-Platform Release
         tag: ${{ github.ref_name }}
-        artifacts: fileVue-win-x64.zip,fileVue-linux-x64.zip
+        artifacts: fileVue-win-x64.zip,fileVue-linux-x64.zip,fileVue-linux-arm64.zip,fileVue-macos-x64.zip
         allowUpdates: true
         omitBody: false
         body: |
@@ -99,10 +174,22 @@ jobs:
           ## 包含的构建
           - **Windows x64**: fileVue-win-x64.zip
           - **Linux x64**: fileVue-linux-x64.zip
+          - **Linux ARM64**: fileVue-linux-arm64.zip
+          - **macOS x64**: fileVue-macos-x64.zip
           
           ## 使用说明
           1. 下载对应平台的压缩包
           2. 解压后运行可执行文件
           3. 默认端口：8001
+          
+          ### macOS使用说明
+          - 解压后，右键点击可执行文件
+          - 选择"打开"
+          - 如果系统提示"无法打开"，请在"系统偏好设置" → "安全性与隐私"中允许运行
+          
+          ### ARM64设备支持
+          - Raspberry Pi 4/5
+          - Apple Silicon Mac (通过Linux虚拟机)
+          - ARM64服务器
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
