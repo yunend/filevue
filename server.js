@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 const multer = require('multer');
 let config;
-
+//app.use('/test', express.static('e:/'));
 //统一的错误处理函数
 function handleError(err) {
     console.error('程序错误:', err.message);
