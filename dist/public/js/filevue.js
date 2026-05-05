@@ -4,7 +4,7 @@ class FileVue {
         const extension = item.name.split('.').pop().toLowerCase();
         switch (extension) {
             case 'ggb':
-                window.open(`./ggb/ggbvue.html?path=${encodeURIComponent(item.path)}`, '_ggb');
+                window.open(`./ggb/ggbvue.html?path=${encodeURIComponent(item.path)}&root=${encodeURIComponent(this.config.root)}`, '_ggb');
                 break;
             default:
                 window.open(item.path, '_blank');
@@ -13,10 +13,10 @@ class FileVue {
     constructor() {
         this.currentPath = '/';
         this.sortState = {
-            byName: 'asc', // 修改：初始值为'asc'，表示默认按名称升序排列
-            byDate: null  // 修改：初始值为null
+            byName: 'asc', // 默认按名称升序排列
+            byDate: null  
         };
-        // 添加配置选项
+        // 配置选项
         this.config = {
             showHeader: true,    // 是否显示fileListHeader
             showDate: true,      // 是否显示文件日期
@@ -28,34 +28,32 @@ class FileVue {
        
     }
 
-    // 初始化文件浏览器
     init() {
         // 加载初始目录
         if (this.config.initialPath) {
             this.currentPath = this.config.initialPath;
         }
         this.loadDirectory(this.currentPath);
+        console.log("当前HTTP:",this.config.root)
     }
 
 
 
 // 获取文件与目录
-async getFilesAndDirectories(fullPath) {
-     // 判断是否是URL
-     let path;
-     try {
-         // 尝试解析为URL
-         const url = new URL(fullPath);
-         path = url.pathname;
-     } catch (e) {
-         // 如果不是URL，直接使用原路径
-         path = fullPath;
-     }
+async getFilesAndDirectories(path) {
+    const pathArray = path.split('/').filter(item => item !== '');
     
-    // 确保路径以斜杠开头
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    // 使用完整URL请求
-    const response = await fetch(`${this.config.root}list:${normalizedPath}`);
+    // root以'/'末尾
+    if (!this.config.root.endsWith('/')) {this.config.root += '/';}
+    const response = await fetch(`${this.config.root}api/dir:`,{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+            path:pathArray
+        })
+    });
     if (!response.ok) throw new Error('Network response was not ok');
 
     const data = await response.json();
@@ -63,24 +61,22 @@ async getFilesAndDirectories(fullPath) {
     return data.map(item => {
         if (item.path) {
             item.path = item.path.replace(/\\/g, '/');
-            // 转换为完整URL路径
-            item.path = `${this.config.root}${item.path.startsWith('/') ? item.path.substring(1) : item.path}`;
-            // 保留相对路径用于显示
-            item.relativePath = `/${item.path.replace(this.config.root, '')}`;
+            item.path = `${item.path.startsWith('/') ? item.path.substring(1) : item.path}`;
+            
         }
         return item;
     });
 }
-/* //如果是everything服务器，则使用以下方法获取文件和目录
-async getFilesAndDirectories(fullPath) {
-const response = await fetch(fullPath + '?j=1');
+//如果是everything服务器，则使用以下方法获取文件和目录
+/*async getFilesAndDirectories(path) {
+const response = await fetch(this.config.root + path + '?j=1');
     if (!response.ok) throw new Error('Network response was not ok');
     let data = await response.json();
-    
+    console.log(data)
     return data.results.map(item => {
-        // 处理路径拼接，确保fullPath以斜杠结尾
-        const normalizedFullPath = fullPath.endsWith('/') ? fullPath : `${fullPath}/`;
-        const itemPath = `${normalizedFullPath}${item.name}`;
+        // 处理路径拼接，确保path以斜杠结尾
+        const normalizedpath = path.endsWith('/') ? path : `${path}/`;
+        const itemPath = `${normalizedpath}${item.name}`;
         console.log('itemPath:', itemPath);
         // 转换Windows文件时间（100 纳秒间隔）转换为 Unix 时间戳（毫秒）
         const windowsFileTime = parseInt(item.date_modified);
@@ -248,12 +244,10 @@ const response = await fetch(fullPath + '?j=1');
     // 加载指定目录
     async loadDirectory(path) {
         try {
-            // 如果是相对路径，转换为绝对路径
-            const fullPath = path.startsWith('http') ? path : `${this.config.root}${path.startsWith('/') ? path.substring(1) : path}`;
-            const processedData = await this.getFilesAndDirectories(fullPath);
+            const processedData = await this.getFilesAndDirectories(path);
             
-            // 存储相对路径用于导航显示
-            this.currentPath = path.startsWith('http') ? `/${new URL(path).pathname.substring(1)}` : path;
+            // 存储路径用于导航显示
+            this.currentPath = path;
             
             this.currentData = processedData;
             this.sortState = {
@@ -267,14 +261,10 @@ const response = await fetch(fullPath + '?j=1');
         }
     }
 
-    
-
-    
-   
     // 处理文件夹点击
     handleFolderClick(item) {    
         // 使用相对路径导航
-        this.loadDirectory(item.relativePath );
+        this.loadDirectory(item.path);
     }
     // 导航到上一级目录
     navigateUp() {
@@ -342,10 +332,10 @@ const response = await fetch(fullPath + '?j=1');
                 (this.sortState.byDate === 'asc' ? '▲' : '▼') : '';
         }
         
-        // 直接重新渲染文件列表
+        // 重新渲染文件列表
         this.renderFileListBody();
     }
-    // 添加配置方法
+    // 设置配置
     setConfig(config) {
         this.config = { ...this.config, ...config };
         

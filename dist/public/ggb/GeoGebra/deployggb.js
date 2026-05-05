@@ -171,7 +171,7 @@
           delete parameters.height
         }
         loadedAppletType = type;
-        console.log('type是:',type,parameters.height)
+        //console.log('type是:',type,parameters.height)
         if (type === "screenshot") {
           injectScreenshot(appletElem, parameters)
         } else {
@@ -185,7 +185,7 @@
             loadedAppletType = "screenshot";
             injectPlayButton(appletElem, parameters, noPreview, type)
           } else {
-            console.log("到这:",appletElem,parameters,noPreview)
+            //console.log("到这:",appletElem,parameters,noPreview)
             injectHTML5Applet(appletElem, parameters, noPreview)
           }
         }
@@ -357,7 +357,7 @@
         noPreview = true
       }
       var loadScript = !isRenderGGBElementEnabled && !scriptLoadStarted;
-      console.log("loadScript:",loadScript)
+      //console.log("loadScript:",loadScript)
       if (!isRenderGGBElementEnabled && !scriptLoadStarted || (ggbHTML5LoadedCodebaseVersion !== html5CodebaseVersion || ggbHTML5LoadedCodebaseIsWebSimple && !html5CodebaseIsWebSimple)) {
         loadScript = true;
         isRenderGGBElementEnabled = false;
@@ -368,7 +368,7 @@
       var oriWidth = parameters.width;
       var oriHeight = parameters.height;
       parameters.disableAutoScale = parameters.disableAutoScale === undefined ? GGBAppletUtils.isFlexibleWorksheetEditor() : parameters.disableAutoScale;
-      console.log("不能自动scale:",parameters.disableAutoScale)
+      //console.log("不能自动scale:",parameters.disableAutoScale)
       if (parameters.width !== undefined) {
         if (parseVersion(html5CodebaseVersion) <= 4.4) {
 
@@ -385,7 +385,7 @@
           }
         } else {
           var minWidth = 100;
-          console.log("valB:",valBoolean(parameters.showToolBar));
+          //console.log("valB:",valBoolean(parameters.showToolBar));
           if (valBoolean(parameters.showToolBar) || valBoolean(parameters.showMenuBar)) {
             if (parameters.hasOwnProperty("customToolBar")) {
               parameters.customToolbar = parameters.customToolBar
@@ -416,8 +416,8 @@
         applet.resize()
       }));
 
-      console.log("显示parameters.appletOnLoad:",parameters.appletOnLoad)
-      console.log("显示!noPreview:",!noPreview)
+      //console.log("显示parameters.appletOnLoad:",parameters.appletOnLoad)
+      //console.log("显示!noPreview:",!noPreview)
       var oriAppletOnload = typeof parameters.appletOnLoad === "function" ? parameters.appletOnLoad : function () {};
       if (!noPreview && parameters.width !== undefined) {
         if (!parameters.hasOwnProperty("showSplash")) {
@@ -425,15 +425,15 @@
         }
         var previewPositioner = appletElem.querySelector(".applet_scaler.prerender");
 
-        console.log("显示previewPositioner:",previewPositioner)
+        //console.log("显示previewPositioner:",previewPositioner)
 
         var preRendered = previewPositioner !== null;
 
-        console.log("显示preRendered:",preRendered)
+        //console.log("显示preRendered:",preRendered)
         if (!preRendered) {
           var previewContainer = createScreenShotDiv(oriWidth, oriHeight, parameters.borderColor, false);
            
-          console.log("显示previewContainer:",previewContainer)
+          //console.log("显示previewContainer:",previewContainer)
 
           previewPositioner = document.createElement("div");
           previewPositioner.className = "applet_scaler";
@@ -444,17 +444,17 @@
         } else {
           var previewContainer = previewPositioner.querySelector(".ggb_preview")
         }
-        console.log("window.GGBT_spinner:",window.GGBT_spinner)
+        //console.log("window.GGBT_spinner:",window.GGBT_spinner)
         if (window.GGBT_spinner) {
           window.GGBT_spinner.attachSpinner(previewPositioner, "66%")
         }
 
-         console.log("显示parseVersion(html5CodebaseVersion):",parseVersion(html5CodebaseVersion))
+         //console.log("显示parseVersion(html5CodebaseVersion):",parseVersion(html5CodebaseVersion))
         if (parseVersion(html5CodebaseVersion) >= 5) {
           parameters.appletOnLoad = function (api) {
             var preview = appletElem.querySelector(".ggb_preview");
 
-            console.log("显示preview:",preview)
+            //console.log("显示preview:",preview)
 
             if (preview) {
               preview.parentNode.removeChild(preview)
@@ -462,28 +462,28 @@
             if (window.GGBT_spinner) {
               window.GGBT_spinner.removeSpinner(previewPositioner)
             }
-            console.log("显示window.GGBT_wsf_view:",window.GGBT_wsf_view)
+            //console.log("显示window.GGBT_wsf_view:",window.GGBT_wsf_view)
             if (window.GGBT_wsf_view) {
               $(window).trigger("resize")
             }
-            console.log("api:",api)
+            //console.log("api:",api)
             oriAppletOnload(api)
-            console.log("现在parameters:",parameters)
+            //console.log("现在parameters:",parameters)
             
           };
 
-          console.log("显示!preRendered:",!preRendered)
+          //console.log("显示!preRendered:",!preRendered)
 
           if (!preRendered) {
-            console.log("显示previewContainer:",previewContainer)
-            console.log("显示previewPositioner:",previewPositioner)
+            //console.log("显示previewContainer:",previewContainer)
+            //console.log("显示previewPositioner:",previewPositioner)
             previewPositioner.appendChild(previewContainer)
           }
         } else {
           article.appendChild(previewContainer)
         }
 
-        console.log("显示article:",article)
+        //console.log("显示article:",article)
         previewPositioner.appendChild(article);
         if (!preRendered) {
           appletElem.appendChild(previewPositioner)
@@ -509,7 +509,7 @@
       }
 
       function renderGGBElementWithParams(article, parameters) {
-        console.log("renderGGBElement:",renderGGBElement)
+        //console.log("renderGGBElement:",renderGGBElement)
         if (parameters && typeof parameters.appletOnLoad === "function" && typeof renderGGBElement === "function") {
           renderGGBElement(article, parameters.appletOnLoad)
         } else {
@@ -544,7 +544,7 @@
         }
       }
 
-      console.log("显示loadScript:",loadScript)
+      //console.log("显示loadScript:",loadScript)
       if (loadScript) {
         scriptLoadStarted = true;
         for (var i = 0; i < article.childNodes.length; i++) {
@@ -554,7 +554,7 @@
             i--
           }
         }
-        console.log("显示ggbHTML5LoadedScript:",ggbHTML5LoadedScript)
+        //console.log("显示ggbHTML5LoadedScript:",ggbHTML5LoadedScript)
         if (ggbHTML5LoadedScript !== null) {
           var el = document.querySelector('script[src="' + ggbHTML5LoadedScript + '"]');
           if (el !== undefined && el !== null) {
@@ -567,7 +567,7 @@
         };
         script.src = html5Codebase + html5CodebaseScript;
 
-        console.log("script.src:",script.src)
+        //console.log("script.src:",script.src)
         
         ggbHTML5LoadedCodebaseIsWebSimple = html5CodebaseIsWebSimple;
         ggbHTML5LoadedCodebaseVersion = html5CodebaseVersion;
@@ -586,9 +586,9 @@
         } else if (html5Codebase.requirejs) {
           require(["geogebra/runtime/js/web3d/web3d.nocache"], scriptLoaded)
         } else {
-          console.log("-----------------------")
+          //console.log("-----------------------")
           script.onload = scriptLoaded;
-          console.log("appletElem:",appletElem)
+          //console.log("appletElem:",appletElem)
           appletElem.appendChild(script)
         }
       } else {
@@ -1088,7 +1088,7 @@
 
     function responsiveResize(appletElem, parameters) {
       var article = appletElem.querySelector(".appletParameters");
-      console.log("响应式article,window.GGBT_wsf_view:",article,window.GGBT_wsf_view)
+      //console.log("响应式article,window.GGBT_wsf_view:",article,window.GGBT_wsf_view)
 
       if (article) {
         if (typeof window.GGBT_wsf_view === "object" && window.GGBT_wsf_view.isFullscreen()) {
@@ -1102,7 +1102,7 @@
         }
         var scale = getScale(parameters, appletElem);
 
-        console.log("isFlexibleWorksheetEditor():",isFlexibleWorksheetEditor())
+        //console.log("isFlexibleWorksheetEditor():",isFlexibleWorksheetEditor())
 
         if (isFlexibleWorksheetEditor()) {
           article.setAttribute("data-param-scale", scale)
@@ -1118,13 +1118,13 @@
           return
         }
         var appName = parameters.id !== undefined ? parameters.id : "ggbApplet";
-        console.log("appName:",appName)
+        //console.log("appName:",appName)
         var app = window[appName];
-        console.log("app",app)
+        //console.log("app",app)
         if ((app == null || !app.recalculateEnvironments) && scaleElem !== null && !scaleElem.className.match(/fullscreen/)) {
           scaleElem.parentNode.style.transform = "";
           if (!isNaN(scale) && scale !== 1) {
-            console.log("显示scale:",scale)
+            //console.log("显示scale:",scale)
 
             scaleElem.parentNode.style.width = parameters.width * scale + "px";
             scaleElem.parentNode.style.height = parameters.height * scale + "px";

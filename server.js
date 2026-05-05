@@ -139,10 +139,17 @@ app.use(compression({
 
 
 // 处理所有请求的正则表达式路由
-app.get(/^\/list:(?:\/(.*))?\/?$/, async (req, res) => {
-    const requestedPath = req.params[0] || '';
+app.post("/api/dir:", async (req, res) => {
+     // 从请求体中获取路径数组
+    const { path: pathArray } = req.body;
+    if (!pathArray ||!Array.isArray(pathArray)) {
+            return res.status(400).json({ error: '路径参数必须是数组格式' });
+        }
+    
+    // 将路径数组拼接成完整路径
+    const requestedPath = pathArray.length > 0 ? '/' + pathArray.join('/') : '/';
     const fullPath = path.join(ROOT_PATH, requestedPath);
-
+    
     try {
         const stats = await fs.promises.stat(fullPath);
         

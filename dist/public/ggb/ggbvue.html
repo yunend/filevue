@@ -78,19 +78,19 @@
             padding: 0;
             overflow: hidden;
             display: flex;
-            /* 新增：启用Flexbox布局 */
+            /* 启用Flexbox布局 */
             justify-content: center;
-            /* 新增：水平居中 */
+            /* 水平居中 */
             align-items: center;
-            /* 新增：垂直居中 */
+            /* 垂直居中 */
             border: 3px solid #007BFF;
             /* 修改：使用主题色 */
             border-radius: 12px;
-            /* 新增：圆角 */
+            /* 圆角 */
             box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-            /* 新增：阴影 */
+            /* 阴影 */
             transition: border-color 0.3s ease;
-            /* 新增：过渡效果 */
+            /* 过渡效果 */
 
         }
 
@@ -112,7 +112,7 @@
 
 
 
-        /* 新增布局容器样式 */
+        /* 布局容器样式 */
         /* .main-container {
             display: flex;
             
@@ -211,7 +211,7 @@
         </div>
     </nav>
 
-    <!-- 新增标题显示 -->
+    <!-- 标题显示 -->
     <div id="current-file-title" class="mx-auto text-center text-primary font-weight-bold" style="font-size: 2rem;">
     </div>
     <!-- <div id="ggb-element" style="margin:auto"></div> -->
@@ -226,7 +226,7 @@
         <!-- 切换按钮 -->
         <div class="toggle-btn" onclick="toggleFileList()">☰</div>
 
-        <!-- 新增：工具栏切换按钮 -->
+        <!-- 工具栏切换按钮 -->
         <div class="toggle-btn" style="right: 2%; left: auto;" onclick="toggleToolBar()">🔧</div>
 
         <div class="ggb-container">
@@ -246,7 +246,10 @@
 
         // 解析查询字符串为URLSearchParams对象
         const queryParams = new URLSearchParams(queryString);
-        let ggbFilePath = queryParams.has('path') ? queryParams.get('path') : ""; // 添加错误处理
+        let ggbFilePath = queryParams.has('path') ? queryParams.get('path') : ""; 
+        let httpRoot = queryParams.has('root') ? queryParams.get('root') : "/"; 
+        ggbFilePath = httpRoot+ggbFilePath;
+        console.log(ggbFilePath)
         //let viewportWidth = window.innerWidth; // 视口宽度
         //let viewportHeight = window.innerHeight; // 视口高度
         let ggbAppletConfig = {
@@ -279,7 +282,7 @@
             return applet;
         }
 
-        // 新增：更新标题函数
+        //更新标题
         function updateTitle(filePath) {
             const titleElement = document.getElementById('current-file-title');
             if (filePath) {
@@ -297,11 +300,12 @@
                 showDate: false,
                 showDownload: false,
                 initialPath: '/ggb/ggbResources',
+                root:httpRoot
             });
             fileVue.handleFileClick = function (item) {
                 const extension = item.name.split('.').pop().toLowerCase();
                 if (extension === 'ggb') {
-                    let name = item.path;
+                    let name = httpRoot + item.path;
                     ggbAppletConfig.filename = name;
                     initGGBApplet(ggbAppletConfig);
                 }
@@ -323,8 +327,6 @@
             }, 100);
         });
 
-
-
         // 切换文件列表显示状态
         function toggleFileList() {
             const fileList = document.querySelector('.file-list-container');
@@ -332,7 +334,7 @@
             fileList.classList.toggle('show');
             toggleBtn.classList.toggle('active'); // 切换 active 类
         }
-        // 新增：点击外部区域隐藏文件列表
+        // 点击外部区域隐藏文件列表
         document.addEventListener('click', function (event) {
             const fileList = document.querySelector('.file-list-container');
             const toggleBtn = document.querySelector('.toggle-btn');
@@ -349,7 +351,7 @@
             event.stopPropagation();
         });
 
-        // 新增：切换工具栏显示状态的函数
+        // 切换工具栏显示状态的函数
         function toggleToolBar() {
             if (typeof ggbApplet !== 'undefined') {
                 const isToolBarVisible = !ggbAppletConfig.showToolBar;
@@ -362,7 +364,7 @@
                 initGGBApplet(ggbAppletConfig);
             }
         }
-        // MutationObserver 接口提供了监视对 DOM 树所做更改的能力。
+        
         let target = document.body;
         let loading = document.getElementById('loading');
         function observe() {
