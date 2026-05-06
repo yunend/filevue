@@ -11,6 +11,17 @@ module.exports = {
 ```
 
 ## 客户端配置
+### 全局配置
+```js
+let initialPath = "/";//在当前目录下的定位
+let root = "/";//例如,http://124.223.50.99:8888
+let extensionMap = new Map([
+    ['ggb', './ggb/ggbvue.html']
+]);//添加后缀名映射到打开方式,后缀名使用小写字母
+let enableEverything = false;//在everything中打开http服务,设置enableEverything=true,再设置root的值
+
+```
+### 页面内配置
 在html文件中引入filevue.js与filevue.css，以及fileListContainer
 ```html
 <head>
@@ -18,10 +29,11 @@ module.exports = {
 </head>
 <body>
     <div id="fileListContainer"></div>
+    <script src="/js/clientConfig.js"></script><!--加载配置文件 -->
     <script src="/js/filevue.js"></script>
 </body>
 ```
-如果不配置则使用默认配置；如需要配置则增加以下代码
+如果需要更精细的配置，则增加以下代码
 ```html
 <script>
 window.addEventListener("DOMContentLoaded", function () {
@@ -81,7 +93,7 @@ systemctl enable filevue
 systemctl start filevue
 ```
 ## Everything HTTP 服务器兼容
-`filevue.js`中everything的getFilesAndDirectories注释取消，并注释原来的getFilesAndDirectories，再修改root的值，例如`root: 'http://124.223.50.99:8888/'`。
+见客户端的[全局配置](#全局配置)
 ## 命令行使用
 ```bash
 filevue.exe -h  # 查看帮助
@@ -118,7 +130,7 @@ filevue.exe -p 9000 -s E:/teaching_files -u false
  * @returns {Promise<Array>} 返回包含文件和目录信息的数组
  *   每个元素格式: {name: string, type: 'file'|'directory', path: string, mtime: string}
  */
-const items = await fileVue.getFilesAndDirectories('http://localhost:8889/path/to/dir');
+const items = await fileVue.getFilesAndDirectories('http://path/to/dir');//注：与v2.2.0版本不同
 ```
 ### getFiles(path)
 ```javascript
@@ -128,7 +140,7 @@ const items = await fileVue.getFilesAndDirectories('http://localhost:8889/path/t
  * @returns {Promise<Array>} 返回仅包含文件信息的数组
  *   每个元素格式: {name: string, type: 'file', path: string, mtime: string}
  */
-const files = await fileVue.getFiles('http://localhost:8889/path/to/dir');
+const files = await fileVue.getFiles('/path/to/dir');
 ```
 ### getDirectories(path)
 ```javascript
@@ -138,7 +150,7 @@ const files = await fileVue.getFiles('http://localhost:8889/path/to/dir');
  * @returns {Promise<Array>} 返回仅包含目录信息的数组
  *   每个元素格式: {name: string, type: 'directory', path: string, mtime: string}
  */
-const dirs = await fileVue.getDirectories('http://localhost:8889/path/to/dir');
+const dirs = await fileVue.getDirectories('/path/to/dir');
 ```
 ## Q&A
 ### Q: Windows下如何开机未登录系统自动启动？

@@ -1,6 +1,6 @@
- {
-    "port": 8002, 
-    "enableUpload": true, 
-    "staticFolder": "./dist/public", 
-    "enableCORS":true
+{
+  "port": 8002,
+  "enableUpload": true,
+  "staticFolder": "./dist/public",
+  "enableCORS": true
 }

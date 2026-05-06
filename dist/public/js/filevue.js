@@ -1,15 +1,30 @@
+try {
+    if (initialPath===undefined||root===undefined||extensionMap===undefined||enableEverything===undefined){      
+    }
+}
+catch (error){
+    alert("客户端配置错误！")
+    throw new Error("配置出错")
+}
+
 class FileVue {
     // 处理文件点击
     handleFileClick(item) {
         const extension = item.name.split('.').pop().toLowerCase();
-        switch (extension) {
-            case 'ggb':
-                window.open(`./ggb/ggbvue.html?path=${encodeURIComponent(item.path)}&root=${encodeURIComponent(this.config.root)}`, '_ggb');
-                break;
-            default:
-                window.open(item.path, '_blank');
-        }
+        
+        extensionMap.forEach((value,key,map)=>{
+            map.set(key,()=>{
+                console.log(value)
+                window.open(`${value}?path=${encodeURIComponent(item.path)}&root=${encodeURIComponent(this.config.root)}`, '_'+value);
+            })
+        })
+       if (extensionMap.get(extension)) { 
+       extensionMap.get(extension)();
+       }
+       
     }
+
+
     constructor() {
         this.currentPath = '/';
         this.sortState = {
@@ -21,8 +36,8 @@ class FileVue {
             showHeader: true,    // 是否显示fileListHeader
             showDate: true,      // 是否显示文件日期
             showDownload: true,   // 是否显示“下载”链接
-            initialPath: '/',     // 初始化时加载的目录
-            root: '/', // 根路径，默认指向本地服务器
+            initialPath: initialPath,     // 初始化时加载的目录
+            root: root, // 根路径，默认指向本地服务器
         };
         this.currentData = []; // 用于存储当前目录数据
        
@@ -40,12 +55,12 @@ class FileVue {
 
 
 // 获取文件与目录
-async getFilesAndDirectories(path) {
+async mainGetFilesAndDirectories(path) {
     const pathArray = path.split('/').filter(item => item !== '');
     
     // root以'/'末尾
     if (!this.config.root.endsWith('/')) {this.config.root += '/';}
-    const response = await fetch(`${this.config.root}api/dir:`,{
+    const response = await fetch(`${this.config.root}api/dir`,{
         method:'POST',
         headers:{
             'Content-Type':'application/json'
@@ -68,11 +83,10 @@ async getFilesAndDirectories(path) {
     });
 }
 //如果是everything服务器，则使用以下方法获取文件和目录
-/*async getFilesAndDirectories(path) {
+async everythingGetFilesAndDirectories(path) {
 const response = await fetch(this.config.root + path + '?j=1');
     if (!response.ok) throw new Error('Network response was not ok');
     let data = await response.json();
-    console.log(data)
     return data.results.map(item => {
         // 处理路径拼接，确保path以斜杠结尾
         const normalizedpath = path.endsWith('/') ? path : `${path}/`;
@@ -90,7 +104,16 @@ const response = await fetch(this.config.root + path + '?j=1');
             "mtime": new Date(unixTimestampMs).toISOString()
         };
     });
-} */
+}
+
+async getFilesAndDirectories(path){
+    if (enableEverything===true){
+       return this.everythingGetFilesAndDirectories(path);
+    }
+    else {
+       return  this.mainGetFilesAndDirectories(path);
+    }
+}
 
     // 获取目录
     async getDirectories(path) {

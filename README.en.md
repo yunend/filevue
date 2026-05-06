@@ -88,7 +88,7 @@ Default port: 8888 (can be customized via config.js)
 ### Configuration
 [Developer Documentation](./doc/dev.md)
 ## Online Demo
-Visit our demo site: [https://geomath.icu:8080](https://geomath.icu:8080)
+Visit our demo site: [http://home.yunend.top:8002](http://home.yunend.top:8002)
 
 ## Notes:
 **1. Ensure the port is available when running fileVue.exe.**

@@ -6,6 +6,7 @@ const path = require('path');
 const compression = require('compression');
 const app = express();
 
+
 // 解析请求体的中间件
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -139,7 +140,7 @@ app.use(compression({
 
 
 // 处理所有请求的正则表达式路由
-app.post("/api/dir:", async (req, res) => {
+app.post("/api/dir", async (req, res) => {
      // 从请求体中获取路径数组
     const { path: pathArray } = req.body;
     if (!pathArray ||!Array.isArray(pathArray)) {
