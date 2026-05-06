@@ -57,11 +57,13 @@
 </figure>
 
 ### 安装步骤
-1. Windows系统原生安装：
-   - 下载压缩包：[fileVue-win-x64.zip](https://github.com/yunend/filevue/releases/download/v2.1.0/fileVue-win-x64.zip)
-   - 将 `FileVue.exe`、`config.js` 文件与 `public` 文件夹放置在同一目录下
-   - 双击运行 `FileVue.exe`
-   - 打开浏览器，访问 `http://localhost:8888`
+1. Windows、linux、Macos安装：
+   - 下载压缩包：[fileVue-xxx-xxx64.zip](https://github.com/yunend/filevue/releases)
+   - 将 `filevue`、`config.js` 文件与 `public` 文件夹放置在同一目录下
+   - 执行 `filevue`
+   - 打开浏览器，访问 `http://localhost:8002`
+
+**注：** 可执行的文件名称除filevue外，后面还有相应的后缀
 
 2. Docker安装：
 ```bash
@@ -90,5 +92,5 @@ docker run --name fv --net=host \
 访问我们的在线演示站点：[http://home.yunend.top:8002](http://home.yunend.top:8002)
 
 ## 注：
-**1. 运行fileVue.exe时，确保使用的端口未被占用。**
-**2. fileVue.exe由于使用 compression 中间件对文件进行了压缩，所以下载文件时显示大小未知，但并不影响下载**
+**1. 运行fileVue时，确保使用的端口未被占用。**
+**2. 由于使用 compression 中间件对文件进行了压缩，所以下载文件时显示大小未知，但并不影响下载**
