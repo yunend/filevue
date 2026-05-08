@@ -287,7 +287,7 @@ jobs:
           FILE_SIZE=$(ls -lh "${ASSET_NAME}" | awk '{print $5}')
           echo "File size: ${FILE_SIZE}"
 
-           # 上传到 Gitee，带重试机制
+          # 上传到 Gitee，带重试机制
           MAX_RETRIES=5
           RETRY_COUNT=0
           UPLOAD_SUCCESS=false
@@ -299,11 +299,11 @@ jobs:
             # 计算超时时间：基础时间 + 重试次数 * 2分钟
             TIMEOUT=$((600 + RETRY_COUNT * 120))
             
-            UPLOAD_RESPONSE=$(curl -v -X POST \
+            # 分离stdout和stderr，避免命令解析问题
+            UPLOAD_RESPONSE=$(curl -s -X POST \
               --max-time ${TIMEOUT} \
               --connect-timeout 60 \
               --keep-alive \
-              --progress-bar \
               "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${RELEASE_ID}/attach_files" \
               -u "${GITEE_OWNER}:${GITEE_TOKEN}" \
               -F "file=@${ASSET_NAME}" 2>&1)
