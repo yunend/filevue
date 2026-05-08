@@ -89,7 +89,7 @@ docker run --name fv --net=host \
 ### 配置说明
 [开发者文档](./doc/dev.md)
 ## 在线演示
-访问我们的在线演示站点：[http://home.yunend.top:8002](http://home.yunend.top:8002)
+访问我们的在线演示站点：[http://yunend.top](http://yunend.top)
 
 ## 注：
 **1. 运行fileVue时，确保使用的端口未被占用。**

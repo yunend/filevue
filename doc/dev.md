@@ -12,14 +12,14 @@ module.exports = {
 
 ## 客户端配置
 ### 全局配置
+修改filevue.js文件，
 ```js
-let initialPath = "/";//在当前目录下的定位
-let root = "/";//例如,http://124.223.50.99:8888
-let extensionMap = new Map([
+const initialPath = "/";//在当前目录下的定位
+const root = "/";//例如,http://124.223.50.99:8888
+const extensionMap = new Map([
     ['ggb', './ggb/ggbvue.html']
 ]);//添加后缀名映射到打开方式,后缀名使用小写字母
-let enableEverything = false;//在everything中打开http服务,设置enableEverything=true,再设置root的值
-
+const enableEverything = false;//在everything中打开http服务,设置enableEverything=true,再设置root的值
 ```
 ### 页面内配置
 在html文件中引入filevue.js与filevue.css，以及fileListContainer

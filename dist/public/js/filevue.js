@@ -1,9 +1,9 @@
-let initialPath = "/";//在当前目录下的定位
-let root = "http://home.yunend.top:8002";//例如,http://124.223.50.99:8888
-let extensionMap = new Map([
+const initialPath = "/";//在当前目录下的定位
+const root = "/";//例如,http://124.223.50.99:8888
+const extensionMap = new Map([
     ['ggb', './ggb/ggbvue.html']
 ]);//添加后缀名映射到打开方式,后缀名使用小写字母
-let enableEverything = false;//在everything中打开http服务,设置enableEverything=true,并设置root
+const enableEverything = false;//在everything中打开http服务,设置enableEverything=true,并设置root
 
 
 
@@ -12,19 +12,13 @@ class FileVue {
     handleFileClick(item) {
         const extension = item.name.split('.').pop().toLowerCase();
         
-        extensionMap.forEach((value,key,map)=>{
-            map.set(key,()=>{
-                window.open(`${value}?path=${encodeURIComponent(item.path)}&root=${encodeURIComponent(this.config.root)}`, '_'+value);
-            })
-        })
-       if (extensionMap.get(extension)) { 
-       extensionMap.get(extension)();
-       }else{
-        window.open(item.path, '_blank');
-       }
-       
+         const openUrl = extensionMap.get(extension);
+        if (openUrl) {
+            window.open(`${openUrl}?path=${encodeURIComponent(item.path)}&root=${encodeURIComponent(this.config.root)}`, '_'+openUrl);
+        } else {
+            window.open(item.path, '_blank');
+        }
     }
-
 
     constructor() {
         this.currentPath = '/';
