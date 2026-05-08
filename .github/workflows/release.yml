@@ -287,8 +287,8 @@ jobs:
           FILE_SIZE=$(ls -lh "${ASSET_NAME}" | awk '{print $5}')
           echo "File size: ${FILE_SIZE}"
 
-          # 上传到 Gitee，带重试机制
-          MAX_RETRIES=3
+           # 上传到 Gitee，带重试机制
+          MAX_RETRIES=5
           RETRY_COUNT=0
           UPLOAD_SUCCESS=false
 
@@ -296,9 +296,13 @@ jobs:
             RETRY_COUNT=$((RETRY_COUNT + 1))
             echo "Uploading asset to Gitee (attempt ${RETRY_COUNT}/${MAX_RETRIES}): ${ASSET_NAME}"
             
+            # 计算超时时间：基础时间 + 重试次数 * 2分钟
+            TIMEOUT=$((600 + RETRY_COUNT * 120))
+            
             UPLOAD_RESPONSE=$(curl -v -X POST \
-              --max-time 300 \
-              --connect-timeout 30 \
+              --max-time ${TIMEOUT} \
+              --connect-timeout 60 \
+              --keep-alive \
               --progress-bar \
               "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${RELEASE_ID}/attach_files" \
               -u "${GITEE_OWNER}:${GITEE_TOKEN}" \
@@ -314,7 +318,7 @@ jobs:
               echo "Response: ${UPLOAD_RESPONSE}"
               
               if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                WAIT_TIME=$((RETRY_COUNT * 10))
+                WAIT_TIME=$((RETRY_COUNT * 15))
                 echo "Waiting ${WAIT_TIME} seconds before retry..."
                 sleep $WAIT_TIME
               fi
