@@ -138,6 +138,13 @@ app.use(compression({
     }
 }));
 
+// 添加上传功能状态检查API
+app.get('/api/upload-status', (req, res) => {
+    res.json({ 
+        enabled: config.enableUpload===true,
+        message: config.enableUpload===true ? '文件上传功能已启用' : '文件上传功能已被禁用'
+    });
+});
 
 // 处理所有请求的正则表达式路由
 app.post("/api/dir", async (req, res) => {
@@ -183,82 +190,84 @@ app.post("/api/dir", async (req, res) => {
     }
 });
 
-// 根据配置决定是否启用文件上传功能
-if (config.enableUpload) {
-    // 文件上传配置
-    const storage = multer.diskStorage({
-      destination: (req, file, cb) => {
-        const uploadPath = path.join(ROOT_PATH, 'upload');  // 使用配置的静态文件夹
-        fs.mkdirSync(uploadPath, { recursive: true });
-        cb(null, uploadPath);
-      },
-      filename: function (req, file, cb) {
-        const decodedName = Buffer.from(file.originalname, 'latin1').toString('utf8');
-        cb(null, decodedName);
-      }
-    });
-    const upload = multer({ storage: storage,
-        limits: {
-            fileSize: 1024*1024*1024,// 限制文件大小为1GB
-            //files:10
-        }
-     });
-
-    app.post('/upload', upload.array('files'),(req, res) => {
-        if(!req.files){
-            res.json({ message: "无上传文件！"});
-        }
-        else{
-            res.json({ message: `成功上传 ${req.files.length} 个文件`});
-        }
+if(config.enableUpload===true){
+// 文件上传配置
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+    const uploadPath = path.join(ROOT_PATH, 'upload');  // 使用配置的静态文件夹
+    fs.mkdirSync(uploadPath, { recursive: true });
+    cb(null, uploadPath);
+    },
+    filename: function (req, file, cb) {
+    const decodedName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    cb(null, decodedName);
+    }
+});
+const upload = multer({ storage: storage,
+    limits: {
+        fileSize: 1024*1024*1024,// 限制文件大小为1GB
+        //files:10
+    }
     });
 
-    // 添加文件夹上传路由
-    app.post('/upload-folder', upload.fields([{ name: 'files', maxCount: 1 }, { name: 'relativePath' }]), async (req, res) => {
-        try {
-            const files = req.files['files'];
-            if (!files || files.length === 0) {
-                return res.status(400).json({ message: '无上传文件' });
-            }
+app.post('/upload', upload.array('files'),(req, res) => {
+    if(!req.files){
+        res.json({ message: "无上传文件！"});
+    }
+    else{
+        res.json({ message: `成功上传 ${req.files.length} 个文件`});
+    }
+});
 
-            const file = files[0];
-            
-            // 获取相对路径信息（从 FormData 中获取）
-            const decodedPath = req.body.relativePath || file.originalname;
-
-            // 构建完整的目标路径
-            const targetPath = path.join(ROOT_PATH, 'upload', decodedPath);
-            
-            // 获取目标目录
-            const targetDir = path.dirname(targetPath);
-            
-            // 创建目录（如果不存在）
-            await fs.promises.mkdir(targetDir, { recursive: true });
-            
-           // 移动文件到目标位置
-            await fs.promises.rename(file.path, targetPath);
-            
-            res.json({ message: '文件上传成功' });
-        } catch (err) {
-            console.error('文件夹上传错误:', err);
-            res.status(500).json({ message: '文件上传失败', error: err.message });
+// 添加文件夹上传路由
+app.post('/upload-folder', upload.fields([{ name: 'files', maxCount: 1 }, { name: 'relativePath' }]), async (req, res) => {
+    try {
+        const files = req.files['files'];
+        if (!files || files.length === 0) {
+            return res.status(400).json({ message: '无上传文件' });
         }
-    });
 
-   
-} else {
-    // 当上传功能被禁用时的处理
+        const file = files[0];
+        
+        // 获取相对路径信息（从 FormData 中获取）
+        const decodedPath = req.body.relativePath || file.originalname;
+
+        // 构建完整的目标路径
+        const targetPath = path.join(ROOT_PATH, 'upload', decodedPath);
+        
+        // 获取目标目录
+        const targetDir = path.dirname(targetPath);
+        
+        // 创建目录（如果不存在）
+        await fs.promises.mkdir(targetDir, { recursive: true });
+        
+        // 移动文件到目标位置
+        await fs.promises.rename(file.path, targetPath);
+        
+        res.json({ message: '文件上传成功' });
+    } catch (err) {
+        console.error('文件夹上传错误:', err);
+        res.status(500).json({ message: '文件上传失败', error: err.message });
+    }
+}); 
+}
+else{
+     // 当上传功能被禁用时的处理
     app.post('/upload', (req, res) => {
         res.status(403).json({ 
             message: '文件上传功能已被禁用', 
         });
     });
     
+    // 同样禁用文件夹上传
+    app.post('/upload-folder', (req, res) => {
+        res.status(403).json({ 
+            message: '文件上传功能已被禁用', 
+        });
+    });
     
 }
-
 }
-
 
 // 启动服务器
 if (require.main === module) {

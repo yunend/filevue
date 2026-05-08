@@ -14,12 +14,13 @@ class FileVue {
         
         extensionMap.forEach((value,key,map)=>{
             map.set(key,()=>{
-                console.log(value)
                 window.open(`${value}?path=${encodeURIComponent(item.path)}&root=${encodeURIComponent(this.config.root)}`, '_'+value);
             })
         })
        if (extensionMap.get(extension)) { 
        extensionMap.get(extension)();
+       }else{
+        window.open(item.path, '_blank');
        }
        
     }

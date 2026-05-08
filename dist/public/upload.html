@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文件视界</title>
-    <link rel="shortcut icon" href="/images/logo.ico" type="image/x-icon">
-    <link rel="stylesheet" href="/css/bootstrap4.min.css">
+    <link rel="shortcut icon" href="./images/logo.ico" type="image/x-icon">
+    <link rel="stylesheet" href="./css/bootstrap4.min.css">
    
-    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="./css/common.css">
    
     <style>
         .upload-container {
@@ -56,7 +56,7 @@
    <!-- 导航栏 -->
    <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand" href="#">
-        <img src="/images/logo.svg" width="40" height="40" alt="文件视界">
+        <img src="./images/logo.svg" width="40" height="40" alt="文件视界">
         <span style="margin-left: 10px;">文件视界</span>
     </a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
@@ -94,7 +94,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p>FileVue版本：2.9.1</p>
+                <p>FileVue版本：2.9.2</p>
                 <p>© 2025 303218145@qq.com</p>
                 
             </div>
@@ -114,14 +114,11 @@
                 </div>
                 <button type="submit" class="btn btn-primary btn-block" id="uploadBtn">上传文件</button>
             </form>
-            <div class="mt-3 text-danger">每个文件不能大于1G</div>
+            <div class="mt-3 text-primary">每个文件不能大于1G</div>
             
             <!-- 进度条容器 -->
             <div id="progressContainer" class="progress-container">
                 <h5 class="mb-3">上传进度</h5>
-                <div id="overallProgress" class="progress">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
-                </div>
                 <div id="currentFileInfo" class="file-info"></div>
                 <div id="uploadStatus" class="upload-status"></div>
                 <!-- 取消上传按钮 -->
@@ -144,8 +141,8 @@
         </div>
     </footer>
 
-    <script src="/js/jquery.min.js"></script>
-    <script src="/js/bootstrap4.min.js"></script>
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap4.min.js"></script>
     <script>
         class UploadManager {
             constructor() {
@@ -156,6 +153,18 @@
                 this.currentFile = null;
             }
 
+            // 检查上传功能是否启用
+            async checkUploadEnabled() {
+                try {
+                    const response = await fetch('/api/upload-status');
+                    const data = await response.json();
+                    return data.enabled;
+                } catch (error) {
+                    console.error('检查上传状态失败:', error);
+                    return false; // 如果无法检查，默认认为不可用
+                }
+            }
+
             // 格式化文件大小
             formatFileSize(bytes) {
                 if (bytes === 0) return '0 Bytes';
@@ -163,20 +172,6 @@
                 const sizes = ['Bytes', 'KB', 'MB', 'GB'];
                 const i = Math.floor(Math.log(bytes) / Math.log(k));
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-
-            // 更新总进度
-            updateOverallProgress() {
-                const overallProgress = (this.uploadedFiles / this.totalFiles) * 100;
-                const overallBar = document.querySelector('#overallProgress .progress-bar');
-                overallBar.style.width = overallProgress + '%';
-                overallBar.textContent = Math.round(overallProgress) + '%';
-                
-                // 更新进度条颜色
-                if (overallProgress >= 100) {
-                    overallBar.classList.remove('progress-bar-animated');
-                    overallBar.classList.add('bg-success');
-                }
             }
 
             // 更新当前文件信息
@@ -197,7 +192,15 @@
             }
 
             // 开始上传
-            startUpload(files) {
+            async startUpload(files) {
+                // 首先检查上传功能是否被启用
+                const uploadEnabled = await this.checkUploadEnabled();
+                if (!uploadEnabled) {
+                    document.getElementById('message').textContent = '文件上传功能已被禁用';
+                    document.getElementById('uploadBtn').disabled = false;
+                    return;
+                }
+
                 this.totalFiles = files.length;
                 this.uploadedFiles = 0;
                 this.totalSize = 0;
@@ -213,19 +216,11 @@
                 const progressContainer = document.getElementById('progressContainer');
                 progressContainer.style.display = 'block';
 
-                // 重置进度条
-                const overallBar = document.querySelector('#overallProgress .progress-bar');
-                overallBar.style.width = '0%';
-                overallBar.textContent = '0%';
-                overallBar.classList.remove('bg-success');
-                overallBar.classList.add('progress-bar-animated');
-
                 // 禁用上传按钮，显示取消按钮
                 document.getElementById('uploadBtn').disabled = true;
                 document.getElementById('cancelBtn').style.display = 'inline-block';
 
                 this.updateUploadStatus(`准备上传 ${this.totalFiles} 个文件，总大小: ${this.formatFileSize(this.totalSize)}`, 'info');
-                this.updateOverallProgress();
 
                 // 逐个上传文件
                 this.uploadFilesSequentially(files);
@@ -238,7 +233,6 @@
                     this.currentFile = files[i];
                     await this.uploadSingleFile(this.currentFile);
                     this.uploadedFiles++;
-                    this.updateOverallProgress();
                 }
 
                 this.finishUpload();
@@ -331,7 +325,7 @@
         // 初始化上传管理器
         const uploadManager = new UploadManager();
 
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const files = document.getElementById('fileInput').files;
@@ -349,17 +343,17 @@
             }
 
             document.getElementById('message').textContent = '';
-            uploadManager.startUpload(files);
+            await uploadManager.startUpload(files);
         });
 
-        // 添加取消上传按钮事件监听
+        // 取消上传按钮事件监听
         document.getElementById('cancelBtn').addEventListener('click', function() {
             if (confirm('确定要取消上传吗？')) {
                     uploadManager.cancelUpload();
                 }
         });
 
-        // 添加取消上传功能- ESC键
+        // 取消上传功能- ESC键
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 if (confirm('确定要取消上传吗？')) {
