@@ -205,7 +205,7 @@ jobs:
         git push gitee --all --force
         git push gitee --tags --force
 
-    - name: Sync Release to Gitee
+        - name: Sync Release to Gitee
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
@@ -299,23 +299,35 @@ jobs:
             # 计算超时时间：基础时间 + 重试次数 * 2分钟
             TIMEOUT=$((600 + RETRY_COUNT * 120))
             
-            # 分离stdout和stderr，避免命令解析问题
-            UPLOAD_RESPONSE=$(curl -s -X POST \
+            # 使用临时文件存储响应，避免变量捕获问题
+            UPLOAD_RESPONSE_FILE="upload_response_${RETRY_COUNT}.json"
+            
+            curl -X POST \
               --max-time ${TIMEOUT} \
               --connect-timeout 60 \
               --keep-alive \
               "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${RELEASE_ID}/attach_files" \
               -u "${GITEE_OWNER}:${GITEE_TOKEN}" \
-              -F "file=@${ASSET_NAME}" 2>&1)
+              -F "file=@${ASSET_NAME}" \
+              -o "${UPLOAD_RESPONSE_FILE}" \
+              -w "\nHTTP_CODE:%{http_code}\n"
             
             UPLOAD_EXIT_CODE=$?
             
             if [ $UPLOAD_EXIT_CODE -eq 0 ]; then
-              echo "Upload successful!"
-              UPLOAD_SUCCESS=true
+              # 检查HTTP状态码
+              HTTP_CODE=$(grep "HTTP_CODE:" "${UPLOAD_RESPONSE_FILE}" | cut -d: -f2)
+              
+              if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
+                echo "Upload successful! HTTP code: ${HTTP_CODE}"
+                UPLOAD_SUCCESS=true
+              else
+                echo "Upload failed with HTTP code: ${HTTP_CODE}"
+                echo "Response: $(cat ${UPLOAD_RESPONSE_FILE})"
+              fi
             else
               echo "Upload failed with exit code: ${UPLOAD_EXIT_CODE}"
-              echo "Response: ${UPLOAD_RESPONSE}"
+              echo "Response: $(cat ${UPLOAD_RESPONSE_FILE})"
               
               if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
                 WAIT_TIME=$((RETRY_COUNT * 15))
@@ -323,6 +335,9 @@ jobs:
                 sleep $WAIT_TIME
               fi
             fi
+            
+            # 清理临时文件
+            rm -f "${UPLOAD_RESPONSE_FILE}"
           done
 
           if [ "$UPLOAD_SUCCESS" = false ]; then
@@ -331,4 +346,4 @@ jobs:
           fi
         done
 
-        echo "Release sync completed!"
+        echo "Release sync completed!"      
