@@ -241,52 +241,90 @@ jobs:
         - Apple Silicon Mac (通过Linux虚拟机)
         - ARM64服务器"
 
-                echo "Syncing Release: ${RELEASE_TAG}"
+        echo "Syncing Release: ${RELEASE_TAG}"
 
-                # 检查 Gitee 上是否已存在该标签的 Release
-                EXISTING_RELEASE=$(curl -s -H "Content-Type: application/json" \
-                  "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${RELEASE_TAG}" \
-                  -u "${GITEE_OWNER}:${GITEE_TOKEN}" || echo "")
+        # 检查 Gitee 上是否已存在该标签的 Release
+        EXISTING_RELEASE=$(curl -s -H "Content-Type: application/json" \
+          "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${RELEASE_TAG}" \
+          -u "${GITEE_OWNER}:${GITEE_TOKEN}" || echo "")
 
-                RELEASE_ID=$(echo "$EXISTING_RELEASE" | jq -r '.id // empty')
+        RELEASE_ID=$(echo "$EXISTING_RELEASE" | jq -r '.id // empty')
 
-                if [ -z "$RELEASE_ID" ]; then
-                  # 不存在则创建新 Release
-                  echo "Creating new Release on Gitee..."
-                  CREATE_RESPONSE=$(curl -s -X POST \
-                    -H "Content-Type: application/json" \
-                    "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases" \
-                    -u "${GITEE_OWNER}:${GITEE_TOKEN}" \
-                    -d "{
-                      \"tag_name\": \"${RELEASE_TAG}\",
-                      \"name\": \"${RELEASE_NAME}\",
-                      \"body\": \"${RELEASE_BODY}\",
-                      \"target_commitish\": \"main\"
-                    }")
-                  RELEASE_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id')
-                  echo "Created Release ID: ${RELEASE_ID}"
-                else
-                  echo "Release already exists on Gitee, ID: ${RELEASE_ID}"
-                fi
+        if [ -z "$RELEASE_ID" ]; then
+          # 不存在则创建新 Release
+          echo "Creating new Release on Gitee..."
+          CREATE_RESPONSE=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases" \
+            -u "${GITEE_OWNER}:${GITEE_TOKEN}" \
+            -d "{
+              \"tag_name\": \"${RELEASE_TAG}\",
+              \"name\": \"${RELEASE_NAME}\",
+              \"body\": \"${RELEASE_BODY}\",
+              \"target_commitish\": \"main\"
+            }")
+          RELEASE_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id')
+          echo "Created Release ID: ${RELEASE_ID}"
+        else
+          echo "Release already exists on Gitee, ID: ${RELEASE_ID}"
+        fi
 
-                # 下载并上传附件
-                ASSETS_URL="https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE_TAG}"
-                ASSETS=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "$ASSETS_URL")
+        # 下载并上传附件
+        ASSETS_URL="https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE_TAG}"
+        ASSETS=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "$ASSETS_URL")
 
-                echo "$ASSETS" | jq -c '.assets[]' | while read -r asset; do
-                  ASSET_NAME=$(echo "$asset" | jq -r '.name')
-                  ASSET_DOWNLOAD_URL=$(echo "$asset" | jq -r '.browser_download_url')
-                  
-                  echo "Downloading asset: ${ASSET_NAME}"
-                  curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
-                    "${ASSET_DOWNLOAD_URL}" \
-                    -o "${ASSET_NAME}"
+        echo "$ASSETS" | jq -c '.assets[]' | while read -r asset; 
+        do
+          ASSET_NAME=$(echo "$asset" | jq -r '.name')
+          ASSET_DOWNLOAD_URL=$(echo "$asset" | jq -r '.browser_download_url')
+          
+          echo "Downloading asset: ${ASSET_NAME}"
+          curl -L -H "Authorization: token ${GITHUB_TOKEN}" \
+            "${ASSET_DOWNLOAD_URL}" \
+            -o "${ASSET_NAME}"
+          
+          # 显示文件大小
+          FILE_SIZE=$(ls -lh "${ASSET_NAME}" | awk '{print $5}')
+          echo "File size: ${FILE_SIZE}"
 
-                  echo "Uploading asset to Gitee: ${ASSET_NAME}"
-                  curl -s -X POST \
-                    "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${RELEASE_ID}/attach_files" \
-                    -u "${GITEE_OWNER}:${GITEE_TOKEN}" \
-                    -F "file=@${ASSET_NAME}"
-                done
+          # 上传到 Gitee，带重试机制
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          UPLOAD_SUCCESS=false
 
-                echo "Release sync completed!"        
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$UPLOAD_SUCCESS" = false ]; do
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "Uploading asset to Gitee (attempt ${RETRY_COUNT}/${MAX_RETRIES}): ${ASSET_NAME}"
+            
+            UPLOAD_RESPONSE=$(curl -v -X POST \
+              --max-time 300 \
+              --connect-timeout 30 \
+              --progress-bar \
+              "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${RELEASE_ID}/attach_files" \
+              -u "${GITEE_OWNER}:${GITEE_TOKEN}" \
+              -F "file=@${ASSET_NAME}" 2>&1)
+            
+            UPLOAD_EXIT_CODE=$?
+            
+            if [ $UPLOAD_EXIT_CODE -eq 0 ]; then
+              echo "Upload successful!"
+              UPLOAD_SUCCESS=true
+            else
+              echo "Upload failed with exit code: ${UPLOAD_EXIT_CODE}"
+              echo "Response: ${UPLOAD_RESPONSE}"
+              
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                WAIT_TIME=$((RETRY_COUNT * 10))
+                echo "Waiting ${WAIT_TIME} seconds before retry..."
+                sleep $WAIT_TIME
+              fi
+            fi
+          done
+
+          if [ "$UPLOAD_SUCCESS" = false ]; then
+            echo "Failed to upload ${ASSET_NAME} after ${MAX_RETRIES} attempts"
+            exit 1
+          fi
+        done
+
+        echo "Release sync completed!"
