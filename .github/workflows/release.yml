@@ -140,6 +140,10 @@ jobs:
     needs: [build-windows, build-linux-x64, build-linux-arm64, build-macos]
     
     steps:
+    - name: Checkout code with full history
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 获取完整历史，包含所有分支和标签
     - name: Download Windows artifact
       uses: actions/download-artifact@v4
       with:
@@ -193,3 +197,96 @@ jobs:
           - ARM64服务器
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+    - name: Sync code to Gitee
+      run: |
+        git remote add gitee https://${{ secrets.GITEE_USERNAME }}:${{ secrets.GITEE_TOKEN }}@gitee.com/${{ secrets.GITEE_OWNER }}/${{ secrets.GITEE_REPO }}.git
+        git push gitee --all --force
+        git push gitee --tags --force
+
+    - name: Sync Release to Gitee
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        GITEE_OWNER: ${{ secrets.GITEE_OWNER }}
+        GITEE_REPO: ${{ secrets.GITEE_REPO }}
+      run: |
+        # 安装 jq 用于解析 JSON
+        sudo apt-get install -y jq
+
+        # 获取当前 Release 信息
+        RELEASE_TAG="${{ github.ref_name }}"
+        RELEASE_NAME="FileVue ${{ github.ref_name }} Multi-Platform Release"
+        RELEASE_BODY="# FileVue ${{ github.ref_name }} 多平台发布
+
+        ## 包含的构建
+        - **Windows x64**: fileVue-win-x64.zip
+        - **Linux x64**: fileVue-linux-x64.zip
+        - **Linux ARM64**: fileVue-linux-arm64.zip
+        - **macOS x64**: fileVue-macos-x64.zip
+
+        ## 使用说明
+        1. 下载对应平台的压缩包
+        2. 解压后运行可执行文件
+        3. 默认端口：8001
+
+        ### macOS使用说明
+        - 解压后，右键点击可执行文件
+        - 选择"打开"
+        - 如果系统提示"无法打开"，请在"系统偏好设置" → "安全性与隐私"中允许运行
+
+        ### ARM64设备支持
+        - Raspberry Pi 4/5
+        - Apple Silicon Mac (通过Linux虚拟机)
+        - ARM64服务器"
+
+                echo "Syncing Release: ${RELEASE_TAG}"
+
+                # 检查 Gitee 上是否已存在该标签的 Release
+                EXISTING_RELEASE=$(curl -s -H "Content-Type: application/json" \
+                  "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${RELEASE_TAG}" \
+                  -u "${GITEE_OWNER}:${GITEE_TOKEN}" || echo "")
+
+                RELEASE_ID=$(echo "$EXISTING_RELEASE" | jq -r '.id // empty')
+
+                if [ -z "$RELEASE_ID" ]; then
+                  # 不存在则创建新 Release
+                  echo "Creating new Release on Gitee..."
+                  CREATE_RESPONSE=$(curl -s -X POST \
+                    -H "Content-Type: application/json" \
+                    "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases" \
+                    -u "${GITEE_OWNER}:${GITEE_TOKEN}" \
+                    -d "{
+                      \"tag_name\": \"${RELEASE_TAG}\",
+                      \"name\": \"${RELEASE_NAME}\",
+                      \"body\": \"${RELEASE_BODY}\",
+                      \"target_commitish\": \"main\"
+                    }")
+                  RELEASE_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id')
+                  echo "Created Release ID: ${RELEASE_ID}"
+                else
+                  echo "Release already exists on Gitee, ID: ${RELEASE_ID}"
+                fi
+
+                # 下载并上传附件
+                ASSETS_URL="https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE_TAG}"
+                ASSETS=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "$ASSETS_URL")
+
+                echo "$ASSETS" | jq -c '.assets[]' | while read -r asset; do
+                  ASSET_NAME=$(echo "$asset" | jq -r '.name')
+                  ASSET_DOWNLOAD_URL=$(echo "$asset" | jq -r '.browser_download_url')
+                  
+                  echo "Downloading asset: ${ASSET_NAME}"
+                  curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
+                    "${ASSET_DOWNLOAD_URL}" \
+                    -o "${ASSET_NAME}"
+
+                  echo "Uploading asset to Gitee: ${ASSET_NAME}"
+                  curl -s -X POST \
+                    "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${RELEASE_ID}/attach_files" \
+                    -u "${GITEE_OWNER}:${GITEE_TOKEN}" \
+                    -F "file=@${ASSET_NAME}"
+                done
+
+                echo "Release sync completed!"        
