@@ -44,7 +44,6 @@ class FileVue {
             this.currentPath = this.config.initialPath;
         }
         this.loadDirectory(this.currentPath);
-        console.log("当前HTTP:",this.config.root)
     }
 
 
@@ -159,13 +158,13 @@ async getFilesAndDirectories(path){
         let currentPath = '';
         fileListHeader.innerHTML = `
             <div class="fv-header-content">
-                <h4 class="fv-list-item">
-                    <span class="fv-path-link" onclick="fileVue.loadDirectory('/')">🏠/</span>
-                    ${pathParts.map((part, index) => {
+                <div class="fv-list-item">
+                    <span class="fv-path-link" onclick="fileVue.loadDirectory('/')">🏠/</span>${pathParts.map((part, index) => {
+                        
             currentPath += `/${part}`;
-            return `<span class="fv-path-link" onclick="fileVue.loadDirectory('${currentPath}')">${decodeURIComponent(part)}</span> /`;
+            return `<span class="fv-path-link" onclick="fileVue.loadDirectory('${currentPath}')">${decodeURIComponent(part)}/</span>`;
         }).join('')}
-                </h4>
+                </div>
                 <div class="fv-sort-buttons">
                     <button class="fv-sort-btn" onclick="fileVue.handleSortClick('name')">
                         文件名 <span id="sortNameIcon">${this.sortState.byName !== null ? (this.sortState.byName === 'asc' ? '▲' : '▼') : ''}</span>

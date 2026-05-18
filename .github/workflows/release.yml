@@ -205,7 +205,7 @@ jobs:
         git push gitee --all --force
         git push gitee --tags --force
 
-    - name: Sync Release to Gitee
+    
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}

@@ -8,7 +8,34 @@
     <link rel="stylesheet" href="./css/bootstrap4.min.css">
     <link rel="stylesheet" href="./css/filevue.css">
     <link rel="stylesheet" href="./css/common.css">
-   
+    <style>
+        #fileVueStatus {
+            border: 1px solid rgba(13, 110, 253, 0.15);
+            background: linear-gradient(135deg, rgba(235, 248, 255, 0.95), rgba(240, 255, 245, 0.95));
+            color: #0f4c75;
+            border-radius: 0.85rem;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.98rem;
+            line-height: 1.6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        #fileVueStatus strong {
+            color: #102a43;
+        }
+        #fileVueStatus .status-left,
+        #fileVueStatus .status-right {
+            display: inline-flex;
+            align-items: center;
+        }
+        #fileVueStatus .status-right {
+            justify-content: flex-end;
+        }
+    </style>
    
 </head>
 <body>
@@ -53,7 +80,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p>FileVue版本：2.9.11</p>
+                    <p>FileVue版本：2.9.12</p>
                     <p>© 2025 303218145@qq.com</p>
                     
                 </div>
@@ -94,18 +121,10 @@
             </div>
             <!-- 右侧文件列表 -->
             <div class="col-md-9">
-                <!-- <div id="fileListHeader"></div>  -->
-                <!-- 添加这个容器 -->
-                <!-- <div class="row">
-                    <div class="col">
-                        <div id="fileListContainer">
-                            <ul id="fileList" class="list-unstyled"></ul>
-                        </div>
-                    </div>
-                </div> -->
-                <!-- <ul id="fileList" class="list-unstyled"></ul> -->
-                 <div id="fileListContainer">
-                   
+                 <div id="fileVueStatus" role="status">
+                     正在加载文件视图状态...
+                 </div>
+                 <div id="fileListContainer"></div>
             </div>
         </div>
     </div>
@@ -120,5 +139,30 @@
     <script src="./js/jquery.min.js"></script>
     <script src="./js/bootstrap4.min.js"></script>
     <script src="./js/filevue.js"></script>
+    <script>
+        $(function() {
+            function updateFileVueStatus(uploadEnabled) {
+                const rootText = typeof root !== 'undefined' ? root : '未知';
+                const uploadText = uploadEnabled === true
+                    ? '已启用'
+                    : '已禁用';     
+                $('#fileVueStatus').html(
+                    `<span class="status-left">文件上传：${uploadText}</span><span class="status-right">服务器：${rootText}</span>`
+                );
+            }
+
+            $.ajax({
+                url: '/api/upload-status',
+                method: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    updateFileVueStatus(data.enabled);
+                },
+                error: function() {
+                    updateFileVueStatus(undefined);
+                }
+            });
+        });
+    </script>
 </body>
 </html>
