@@ -1,6 +1,6 @@
 {
   "name": "file-vue",
-  "version": "2.9.12",
+  "version": "2.9.13",
   "main": "server.js",
   "bin": "./server.js",
   "scripts": {

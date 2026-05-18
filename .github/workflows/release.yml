@@ -200,18 +200,16 @@ jobs:
 
 
     - name: Sync code to Gitee
-      run: |
-        git remote add gitee https://${{ secrets.GITEE_USERNAME }}:${{ secrets.GITEE_TOKEN }}@gitee.com/${{ secrets.GITEE_OWNER }}/${{ secrets.GITEE_REPO }}.git
-        git push gitee --all --force
-        git push gitee --tags --force
-
-    
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
         GITEE_OWNER: ${{ secrets.GITEE_OWNER }}
         GITEE_REPO: ${{ secrets.GITEE_REPO }}
       run: |
+        git remote add gitee https://${{ secrets.GITEE_USERNAME }}:${{ secrets.GITEE_TOKEN }}@gitee.com/${{ secrets.GITEE_OWNER }}/${{ secrets.GITEE_REPO }}.git
+        git push gitee --all --force
+        git push gitee --tags --force
+
         # 安装 jq 用于解析 JSON
         sudo apt-get install -y jq
 
@@ -269,62 +267,5 @@ jobs:
           echo "Release already exists on Gitee, ID: ${RELEASE_ID}"
         fi
 
-        # 下载并上传附件
-        ASSETS_URL="https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE_TAG}"
-        ASSETS=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "$ASSETS_URL")
-
-        echo "$ASSETS" | jq -c '.assets[]' | while read -r asset; 
-        do
-          ASSET_NAME=$(echo "$asset" | jq -r '.name')
-          ASSET_DOWNLOAD_URL=$(echo "$asset" | jq -r '.browser_download_url')
-          
-          echo "Downloading asset: ${ASSET_NAME}"
-          curl -L -H "Authorization: token ${GITHUB_TOKEN}" \
-            "${ASSET_DOWNLOAD_URL}" \
-            -o "${ASSET_NAME}"
-          
-          # 显示文件大小
-          FILE_SIZE=$(ls -lh "${ASSET_NAME}" | awk '{print $5}')
-          echo "File size: ${FILE_SIZE}"
-
-          # 上传到 Gitee，带重试机制
-          MAX_RETRIES=3
-          RETRY_COUNT=0
-          UPLOAD_SUCCESS=false
-
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$UPLOAD_SUCCESS" = false ]; do
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            echo "Uploading asset to Gitee (attempt ${RETRY_COUNT}/${MAX_RETRIES}): ${ASSET_NAME}"
-            
-            UPLOAD_RESPONSE=$(curl -v -X POST \
-              --max-time 300 \
-              --connect-timeout 30 \
-              --progress-bar \
-              "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${RELEASE_ID}/attach_files" \
-              -u "${GITEE_OWNER}:${GITEE_TOKEN}" \
-              -F "file=@${ASSET_NAME}" 2>&1)
-            
-            UPLOAD_EXIT_CODE=$?
-            
-            if [ $UPLOAD_EXIT_CODE -eq 0 ]; then
-              echo "Upload successful!"
-              UPLOAD_SUCCESS=true
-            else
-              echo "Upload failed with exit code: ${UPLOAD_EXIT_CODE}"
-              echo "Response: ${UPLOAD_RESPONSE}"
-              
-              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                WAIT_TIME=$((RETRY_COUNT * 10))
-                echo "Waiting ${WAIT_TIME} seconds before retry..."
-                sleep $WAIT_TIME
-              fi
-            fi
-          done
-
-          if [ "$UPLOAD_SUCCESS" = false ]; then
-            echo "Failed to upload ${ASSET_NAME} after ${MAX_RETRIES} attempts"
-            exit 1
-          fi
-        done
-
-        echo "Release sync completed!"      
+        echo "Release sync completed!"
+      
