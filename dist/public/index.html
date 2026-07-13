@@ -151,6 +151,11 @@
                 );
             }
 
+            $('.list-group').on('click', '.list-group-item', function() {
+                $('.list-group .active').removeClass('active');
+                $(this).addClass('active');
+            });
+
             $.ajax({
                 url: '/api/upload-status',
                 method: 'GET',

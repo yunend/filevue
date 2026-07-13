@@ -4,16 +4,14 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const compression = require('compression');
-const app = express();
-
-
-// 解析请求体的中间件
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 const multer = require('multer');
+let app;
 let config;
-//app.use('/test', express.static('e:/'));
-//统一的错误处理函数
+let server;
+
+
+
+
 function handleError(err) {
     console.error('程序错误:', err.message);
     if (err instanceof SyntaxError) {
@@ -113,12 +111,33 @@ config.enableCORS = argv.cors;
 
 function routeApp(){
 
+    // 配置重载路由：重新加载配置文件并重启服务
+    app.get('/reload-config', (req, res) => {
+        res.json({ message: '配置已重新加载，服务正在重启...' });
+        console.log('[' + new Date().toLocaleTimeString() + '] 收到重新加载配置请求...');
+
+        const startTime = Date.now();
+        server.closeAllConnections();
+        server.close(() => {
+            const closeTime = Date.now() - startTime;
+            console.log('[' + new Date().toLocaleTimeString() + '] 服务器已关闭 (' + closeTime + 'ms)，正在重新加载配置...');
+            try{
+                    startServer();
+                }catch(e){
+                    handleError(e);
+                }
+        });
+    });
+
     // 添加跨域中间件（根据配置决定是否启用）
 if (config.enableCORS) {
     app.use((req, res, next) => {
         res.header('Access-Control-Allow-Origin', '*');
         res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        if (req.method === 'OPTIONS') {
+            return res.status(204).end(); 
+        }
         next();
     });
 }
@@ -190,7 +209,6 @@ app.post("/api/dir", async (req, res) => {
     }
 });
 
-if(config.enableUpload===true){
 // 文件上传配置
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -210,81 +228,62 @@ const upload = multer({ storage: storage,
     }
     });
 
-app.post('/upload', upload.array('files'),(req, res) => {
-    if(!req.files){
-        res.json({ message: "无上传文件！"});
+app.post('/upload', (req, res) => {
+    
+    if(!config.enableUpload){
+        return res.status(403).json({ message: '文件上传功能已被禁用' });
     }
-    else{
+    
+    // 调用 multer 中间件
+    upload.array('files')(req, res, (err) => {
+        if(err){
+            return res.status(500).json({ message: '文件上传失败: ' + err.message });
+        }
+        if(!req.files || req.files.length === 0){
+            return res.json({ message: "无上传文件！" });
+        }
         res.json({ message: `成功上传 ${req.files.length} 个文件`});
-    }
+    });
 });
 
-// 添加文件夹上传路由
-app.post('/upload-folder', upload.fields([{ name: 'files', maxCount: 1 }, { name: 'relativePath' }]), async (req, res) => {
-    try {
-        const files = req.files['files'];
-        if (!files || files.length === 0) {
-            return res.status(400).json({ message: '无上传文件' });
-        }
 
-        const file = files[0];
-        
-        // 获取相对路径信息（从 FormData 中获取）
-        const decodedPath = req.body.relativePath || file.originalname;
 
-        // 构建完整的目标路径
-        const targetPath = path.join(ROOT_PATH, 'upload', decodedPath);
-        
-        // 获取目标目录
-        const targetDir = path.dirname(targetPath);
-        
-        // 创建目录（如果不存在）
-        await fs.promises.mkdir(targetDir, { recursive: true });
-        
-        // 移动文件到目标位置
-        await fs.promises.rename(file.path, targetPath);
-        
-        res.json({ message: '文件上传成功' });
-    } catch (err) {
-        console.error('文件夹上传错误:', err);
-        res.status(500).json({ message: '文件上传失败', error: err.message });
+// 404处理
+app.use((req, res) => {
+    res.status(404);  // 设置HTTP状态码为404
+    
+    // 优先使用自定义的404.html文件
+    const filePath = path.join(config.staticFolder, '404.html');
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);  // 发送自定义页面
+    } else {
+        res.send(`...内嵌的默认HTML...`);  // 兜底：内嵌页面
     }
-}); 
-}
-else{
-     // 当上传功能被禁用时的处理
-    app.post('/upload', (req, res) => {
-        res.status(403).json({ 
-            message: '文件上传功能已被禁用', 
-        });
-    });
-    
-    // 同样禁用文件夹上传
-    app.post('/upload-folder', (req, res) => {
-        res.status(403).json({ 
-            message: '文件上传功能已被禁用', 
-        });
-    });
-    
-}
+});
 }
 
-// 启动服务器
+function startServer(){
+    app= express();
+    app.use(express.urlencoded({ extended: true }));
+    app.use(express.json());
+    loadConfig();
+    parseArg();
+    routeApp();
+    server = app.listen(config.port, () => {
+        console.log(`服务器运行在 http://localhost:${config.port}`);
+        console.log(`静态文件目录: ${config.staticFolder}`);
+        console.log(`文件上传功能: ${config.enableUpload ? '已启用' : '已禁用'}`);
+        console.log(`跨域支持: ${config.enableCORS ? '已启用' : '已禁用'}`);  
+    });
+    server.on('error', handleError);
+}
+
+//运行主程序
 if (require.main === module) {
-    try {
-        loadConfig();
-        parseArg();
-        routeApp();
-        const server = app.listen(config.port, () => {
-            console.log(`服务器运行在 http://localhost:${config.port}`);
-            console.log(`静态文件目录: ${config.staticFolder}`);
-            console.log(`文件上传功能: ${config.enableUpload ? '已启用' : '已禁用'}`);
-            console.log(`跨域支持: ${config.enableCORS ? '已启用' : '已禁用'}`);  
-        });
-
-        server.on('error', handleError);
-    } catch (err) {
-        handleError(err);
+    try{
+        startServer();
+    }catch(e){
+        handleError(e);
     }
 }
 
