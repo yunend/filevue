@@ -264,11 +264,46 @@ app.use((req, res) => {
 
 function startServer(){
     app= express();
+    // 禁用 X-Powered-By 头，避免泄露服务器技术信息
+    app.disable('x-powered-by');
     app.use(express.urlencoded({ extended: true }));
-    app.use(express.json());
+    // 自定义 JSON 解析中间件，捕获解析错误并返回通用响应，避免泄露堆栈
+    app.use((req, res, next) => {
+        express.json()(req, res, (err) => {
+            if (err) {
+                if (err.type === 'entity.parse.failed' || err instanceof SyntaxError) {
+                    return res.status(400).json({ error: '请求体格式错误' });
+                }
+                if (err.type === 'entity.too.large') {
+                    return res.status(413).json({ error: '请求体过大' });
+                }
+                return res.status(400).json({ error: '请求错误' });
+            }
+            next();
+        });
+    });
     loadConfig();
     parseArg();
     routeApp();
+    // 全局错误处理中间件（必须在所有路由和中间件之后）
+    // 捕获所有未处理错误，防止泄露堆栈和内部文件路径
+    app.use((err, req, res, next) => {
+        console.error('[' + new Date().toLocaleTimeString() + '] 请求错误:', err.message);
+        // Multer 上传错误处理
+        if (err && err.code && err.code.startsWith('LIMIT_')) {
+            const msgMap = {
+                'LIMIT_FILE_SIZE': '文件大小超过限制',
+                'LIMIT_FILE_COUNT': '文件数量超过限制',
+                'LIMIT_FIELD_KEY': '字段名过长',
+                'LIMIT_FIELD_VALUE': '字段值过大',
+                'LIMIT_FIELD_COUNT': '字段数量过多',
+                'LIMIT_UNEXPECTED_FILE': '意外的文件字段'
+            };
+            return res.status(400).json({ error: msgMap[err.code] || '上传参数错误' });
+        }
+        // 其他情况统一返回通用错误，不暴露堆栈或内部路径
+        res.status(500).json({ error: '服务器内部错误' });
+    });
     server = app.listen(config.port, () => {
         console.log(`服务器运行在 http://localhost:${config.port}`);
         console.log(`静态文件目录: ${config.staticFolder}`);

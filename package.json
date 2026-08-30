@@ -3,6 +3,9 @@
   "version": "2.9.13",
   "main": "server.js",
   "bin": "./server.js",
+  "pkg":{
+    "assert":["public/index.html"]
+  },
   "scripts": {
     "start": "node server.js",
     "test": "jest",
